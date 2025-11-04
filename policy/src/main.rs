@@ -19,7 +19,7 @@ use data::MontyDataLoader;
 
 fn main() {
     let hl = 1024;
-    let dataloader = MontyDataLoader::new("./interleaved.bin", 96000, 4, 8);
+    let dataloader = MontyDataLoader::new("./interleaved.bin", 128000, 4, 8);
 
     let device = CudaDevice::new(0).unwrap();
 
@@ -30,7 +30,7 @@ fn main() {
 
     let mut trainer = Trainer { optimiser, state: () };
 
-    let save_rate = 50;
+    let save_rate = 10;
     let end_superbatch = 200;
     let initial_lr = 0.001;
     let final_lr = 0.00001;

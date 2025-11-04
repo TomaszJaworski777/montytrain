@@ -106,6 +106,7 @@ const SEE_VALS: [i32; 8] = [0, 0, 100, 450, 450, 650, 1250, 0];
 
 impl See for Position {
     fn see(&self, mov: &Move, threshold: i32) -> bool { 
+        let pos = self;
         let sq = usize::from(mov.to());
         assert!(sq < 64, "wha");
         let mut next = if mov.is_promo() { mov.promo_pc() } else { pos.get_pc(1 << mov.src()) };
@@ -166,6 +167,17 @@ impl See for Position {
 
         pos.stm() != us
     } 
+}
+
+fn gain(pos: &Position, mov: &Move) -> i32 {
+    if mov.is_en_passant() {
+        return SEE_VALS[Piece::PAWN];
+    }
+    let mut score = SEE_VALS[pos.get_pc(1 << mov.to())];
+    if mov.is_promo() {
+        score += SEE_VALS[mov.promo_pc()] - SEE_VALS[Piece::PAWN];
+    }
+    score
 }
 
 // impl See for Position {
