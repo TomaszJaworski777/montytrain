@@ -18,8 +18,8 @@ use bullet_cuda_backend::CudaDevice;
 use data::MontyDataLoader;
 
 fn main() {
-    let hl = 16384;
-    let dataloader = MontyDataLoader::new("/home/privateclient/monty_value_training/interleaved.binpack", 96000, 4, 8);
+    let hl = 2048;
+    let dataloader = MontyDataLoader::new("./interleaved.bin", 96000, 4, 8);
 
     let device = CudaDevice::new(0).unwrap();
 
@@ -30,8 +30,8 @@ fn main() {
 
     let mut trainer = Trainer { optimiser, state: () };
 
-    let save_rate = 40;
-    let end_superbatch = 800;
+    let save_rate = 50;
+    let end_superbatch = 200;
     let initial_lr = 0.001;
     let final_lr = 0.00001;
 
@@ -58,7 +58,7 @@ fn main() {
             |trainer, superbatch| {
                 if superbatch % save_rate == 0 || superbatch == steps.end_superbatch {
                     println!("Saving Checkpoint");
-                    let dir = format!("checkpoints/policy-{superbatch}");
+                    let dir = format!("./policy_checkpoints/policy-{superbatch}");
                     let _ = std::fs::create_dir(&dir);
                     trainer.optimiser.write_to_checkpoint(&dir).unwrap();
                     model::save_quantised(&trainer.optimiser.graph, &format!("{dir}/quantised.bin")).unwrap();
@@ -68,4 +68,7 @@ fn main() {
         .unwrap();
 
     model::eval(&mut trainer.optimiser.graph, node, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    model::eval(&mut trainer.optimiser.graph, node, "rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");
+    model::eval(&mut trainer.optimiser.graph, node, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    model::eval(&mut trainer.optimiser.graph, node, "8/8/p5p1/2bk1p1p/5P1P/1P3PK1/8/4B3 b - - 3 48");
 }
