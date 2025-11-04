@@ -62,6 +62,7 @@ fn main() {
                     let _ = std::fs::create_dir(&dir);
                     trainer.optimiser.write_to_checkpoint(&dir).unwrap();
                     model::save_quantised(&trainer.optimiser.graph, &format!("{dir}/quantised.bin")).unwrap();
+                    model::save_raw(&trainer.optimiser.graph, &format!("{dir}/raw.bin")).unwrap();
                 }
             },
         )
@@ -72,3 +73,4 @@ fn main() {
     model::eval(&mut trainer.optimiser.graph, node, "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
     model::eval(&mut trainer.optimiser.graph, node, "8/8/p5p1/2bk1p1p/5P1P/1P3PK1/8/4B3 b - - 3 48");
 }
+

@@ -86,3 +86,21 @@ pub fn save_quantised(graph: &Graph<CudaDevice>, path: &str) -> std::io::Result<
 
     file.write_all(&quant)
 }
+
+pub fn save_raw(graph: &Graph<CudaDevice>, path: &str) -> std::io::Result<()> {
+    use std::io::Write;
+
+    let mut file = std::fs::File::create(path).unwrap();
+
+    let mut res = Vec::new();
+
+    for id in ["l0w", "l0b", "l1w", "l1b"] {
+        let vals = graph.get_weights(id).get_dense_vals().unwrap();
+
+        for x in vals {
+            res.extend_from_slice(&x.to_le_bytes());
+        }
+    }
+
+    file.write_all(&res)
+}
