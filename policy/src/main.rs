@@ -18,7 +18,7 @@ use bullet_cuda_backend::CudaDevice;
 use data::MontyDataLoader;
 
 fn main() {
-    let hl = 1024;
+    let hl = 2048;
     let dataloader = MontyDataLoader::new("./interleaved.bin", 128000, 4, 8);
 
     let device = CudaDevice::new(0).unwrap();
@@ -62,7 +62,7 @@ fn main() {
                     let _ = std::fs::create_dir(&dir);
                     trainer.optimiser.write_to_checkpoint(&dir).unwrap();
                     model::save_quantised(&trainer.optimiser.graph, &format!("{dir}/quantised.bin")).unwrap();
-                    model::save_raw(&trainer.optimiser.graph, &format!("{dir}/raw.bin")).unwrap();
+                    //model::save_raw(&trainer.optimiser.graph, &format!("{dir}/raw.bin")).unwrap();
                 }
             },
         )
