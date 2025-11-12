@@ -18,7 +18,7 @@ use bullet_cuda_backend::CudaDevice;
 use data::MontyDataLoader;
 
 fn main() {
-    let hl = 2048;
+    let hl = 4096;
     let dataloader = MontyDataLoader::new("./interleaved.bin", 128000, 4, 8);
 
     let device = CudaDevice::new(0).unwrap();
