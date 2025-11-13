@@ -2,3 +2,5 @@
 /checkpoints
 /data
 *.network
+*.bin
+*.exe

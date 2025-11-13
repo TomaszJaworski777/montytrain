@@ -1,12 +1,13 @@
 use bullet::{
     game::inputs::SparseInputType,
     nn::{
-        optimiser::{AdamW, AdamWOptimiser},
-        InitSettings, Shape,
+        optimiser::{AdamW, AdamWOptimiser}, Shape,
     },
     trainer::save::SavedFormat,
     value::{NoOutputBuckets, ValueTrainer, ValueTrainerBuilder},
 };
+
+use crate::{QA, QB};
 
 pub fn make_trainer<T: Default + SparseInputType>(
     l1: usize,
@@ -19,30 +20,27 @@ pub fn make_trainer<T: Default + SparseInputType>(
         .inputs(T::default())
         .optimiser(AdamW)
         .save_format(&[
-            SavedFormat::id("pst"),
-            SavedFormat::id("l0w").quantise::<i8>(128).round(),
-            SavedFormat::id("l0b").quantise::<i8>(128).round(),
-            SavedFormat::id("l1w").quantise::<i16>(1024).transpose().round(),
-            SavedFormat::id("l1b").quantise::<i16>(1024).round(),
+            SavedFormat::id("l0w").quantise::<i8>(QA).round(),
+            SavedFormat::id("l0b").quantise::<i8>(QA).round(),
+            SavedFormat::id("l1w").quantise::<i16>(QB).transpose().round(),
+            SavedFormat::id("l1b").quantise::<i16>(QB).round(),
             SavedFormat::id("l2w"),
             SavedFormat::id("l2b"),
             SavedFormat::id("l3w"),
             SavedFormat::id("l3b"),
         ])
         .build_custom(|builder, inputs, targets| {
-            let pst = builder.new_weights("pst", Shape::new(3, num_inputs), InitSettings::Zeroed);
             let l0 = builder.new_affine("l0", num_inputs, l1);
             let l1 = builder.new_affine("l1", l1 / 2, 16);
             let l2 = builder.new_affine("l2", 16, 128);
             let l3 = builder.new_affine("l3", 128, 3);
 
-            l0.init_with_effective_input_size(128);
+            l0.init_with_effective_input_size(32);
 
             let l0 = l0.forward(inputs).crelu().pairwise_mul();
             let l1 = l1.forward(l0).screlu();
             let l2 = l2.forward(l1).screlu();
-            let l3 = l3.forward(l2);
-            let out = l3 + pst.matmul(inputs);
+            let out = l3.forward(l2);
 
             let ones = builder.new_constant(Shape::new(1, 3), &[1.0; 3]);
             let loss = ones.matmul(out.softmax_crossentropy_loss(targets));

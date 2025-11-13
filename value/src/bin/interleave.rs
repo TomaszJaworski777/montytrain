@@ -6,15 +6,15 @@ use std::{
 use bullet::default::formats::montyformat::{FastDeserialise, MontyValueFormat};
 
 fn main() -> std::io::Result<()> {
-    let folder_path = "/home/privateclient/monty_value_training/value_data"; // Specify the folder to scan
-    let output = "interleaved-value.binpack";
+    let folder_path = "./data"; // Specify the folder to scan
+    let output = "interleaved-value.bin";
 
     // Scan the folder and collect file paths with the specified extension
     let inputs: Vec<String> = fs::read_dir(folder_path)?
         .filter_map(|entry| {
             let entry = entry.expect("Failed to read entry");
             let path = entry.path();
-            if path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("binpack") {
+            if path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("bin") {
                 Some(path.to_string_lossy().into_owned())
             } else {
                 None

@@ -1,10 +1,7 @@
 mod arch;
-mod consts;
 mod input;
-mod threats;
 
 use arch::make_trainer;
-use consts::indices;
 use input::ThreatInputs;
 
 use bullet::{
@@ -12,7 +9,6 @@ use bullet::{
     trainer::{
         default::{
             formats::montyformat::chess::{Move, Position},
-            inputs::SparseInputType,
             loader,
         },
         schedule::{lr, wdl, TrainingSchedule, TrainingSteps},
@@ -20,36 +16,30 @@ use bullet::{
     },
 };
 
-const HIDDEN_SIZE: usize = 3072;
+const HIDDEN_SIZE: usize = 2048;
+
+pub const QA: i16 = 128;
+pub const QB: i16 = 1024;
 
 fn main() {
-    println!("Attacks:");
-    println!("Pawn   : {}", indices::PAWN);
-    println!("Bishop : {}", indices::BISHOP[64]);
-    println!("Knight : {}", indices::KNIGHT[64]);
-    println!("Rook   : {}", indices::ROOK[64]);
-    println!("Queen  : {}", indices::QUEEN[64]);
-    println!("King   : {}", indices::KING[64]);
-
-    println!("Inputs: {}", ThreatInputs.num_inputs());
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: "3072T".to_string(),
+        net_id: "3072->2048->16->128".to_string(),
         eval_scale: 400.0,
         steps: TrainingSteps {
-            batch_size: 65_536,
-            batches_per_superbatch: 1526,
+            batch_size: 16384,
+            batches_per_superbatch: 6104,
             start_superbatch: 1,
-            end_superbatch: 4000,
+            end_superbatch: 200,
         },
         wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
         lr_scheduler: lr::ExponentialDecayLR {
             initial_lr: 0.001,
-            final_lr: 0.0000001,
-            final_superbatch: 4000,
+            final_lr: 0.00001,
+            final_superbatch: 200,
         },
-        save_rate: 200,
+        save_rate: 10,
     };
 
     let optimiser_params = optimiser::AdamWParams {
@@ -63,9 +53,9 @@ fn main() {
     trainer.optimiser.set_params(optimiser_params);
 
     let settings = LocalSettings {
-        threads: 2,
+        threads: 4,
         test_set: None,
-        output_directory: "checkpoints",
+        output_directory: "value_checkpoints",
         batch_queue_size: 32,
     };
 
@@ -73,10 +63,9 @@ fn main() {
         true
     }
 
-    //let data_loader = loader::MontyBinpackLoader::new("data/datagen19.binpack", 4096, 4, filter);
     let data_loader = loader::MontyBinpackLoader::new(
-        "/home/privateclient/monty_value_training/interleaved-value.binpack",
-        96000,
+        "./interleaved-value.bin",
+        128000,
         8,
         filter,
     );
@@ -90,8 +79,21 @@ fn main() {
         "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
         "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
     ] {
-        let eval = trainer.eval(fen);
+        let vals = trainer.eval_raw_output(fen);
         println!("FEN: {fen}");
-        println!("EVAL: {}", 400.0 * eval);
+        
+        match vals[..] {
+            [mut loss, mut draw, mut win] => {
+                let max = win.max(draw).max(loss);
+                win = (win - max).exp();
+                draw = (draw - max).exp();
+                loss = (loss - max).exp();
+
+                let total = win + draw + loss;
+                
+                println!("EVAL: ({}, {}, {})", win / total, draw / total, loss / total)
+            }
+            _ => panic!("Invalid output size!"),
+        }
     }
 }
