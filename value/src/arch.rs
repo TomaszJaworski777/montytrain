@@ -22,7 +22,7 @@ pub fn make_trainer<T: Default + SparseInputType>(
         .save_format(&[
             SavedFormat::id("l0w").quantise::<i8>(QA).round(),
             SavedFormat::id("l0b").quantise::<i8>(QA).round(),
-            SavedFormat::id("l1w").quantise::<i16>(QB).round(),
+            SavedFormat::id("l1w").quantise::<i16>(QB).transpose().round(),
             SavedFormat::id("l1b").quantise::<i16>(QB).round(),
             SavedFormat::id("l2w"),
             SavedFormat::id("l2b"),
@@ -31,13 +31,13 @@ pub fn make_trainer<T: Default + SparseInputType>(
         ])
         .build_custom(|builder, inputs, targets| {
             let l0 = builder.new_affine("l0", num_inputs, l1);
-            let l1 = builder.new_affine("l1", l1, 16);
+            let l1 = builder.new_affine("l1", l1 / 2, 16);
             let l2 = builder.new_affine("l2", 16, 128);
             let l3 = builder.new_affine("l3", 128, 3);
 
             l0.init_with_effective_input_size(32);
 
-            let l0 = l0.forward(inputs).screlu();
+            let l0 = l0.forward(inputs).crelu().pairwise_mul();
             let l1 = l1.forward(l0).screlu();
             let l2 = l2.forward(l1).screlu();
             let out = l3.forward(l2);
