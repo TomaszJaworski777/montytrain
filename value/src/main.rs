@@ -17,6 +17,7 @@ use bullet::{
 };
 
 const HIDDEN_SIZE: usize = 2048;
+const END_SUPERBATCH: usize = 800;
 
 pub const QA: i16 = 128;
 pub const QB: i16 = 1024;
@@ -25,19 +26,19 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: "400sb".to_string(),
+        net_id: "800sb".to_string(),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 16384,
             batches_per_superbatch: 6104,
             start_superbatch: 1,
-            end_superbatch: 400,
+            end_superbatch: END_SUPERBATCH,
         },
         wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
         lr_scheduler: lr::ExponentialDecayLR {
             initial_lr: 0.001,
             final_lr: 0.00001,
-            final_superbatch: 400,
+            final_superbatch: END_SUPERBATCH,
         },
         save_rate: 10,
     };
