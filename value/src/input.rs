@@ -1,5 +1,5 @@
-use bullet::game::{formats::{bulletformat::ChessBoard, montyformat::chess::Position}, inputs};
-use chess::{Bitboard, FEN, Piece, Rays, Square};
+use bullet::game::{formats::bulletformat::ChessBoard, inputs};
+use chess::{Bitboard, Piece, Rays, Side, Square};
 
 #[derive(Clone, Copy, Default)]
 pub struct ThreatInputs;
@@ -15,17 +15,14 @@ impl inputs::SparseInputType for ThreatInputs {
     }
 
     fn map_features<F: FnMut(usize, usize)>(&self, board: &Self::RequiredDataType, f: F) {
-        let mut bbs = [0; 8];
+        let mut pos = chess::ChessBoard::default();
+
         for (pc, sq) in board.into_iter() {
             let pt = 2 + usize::from(pc & 7);
             let c = usize::from(pc & 8 > 0);
-            let bit = 1 << sq;
-            bbs[c] |= bit;
-            bbs[pt] |= bit;
-        }
 
-        let pos = Position::from_raw(bbs, false, 0, 0, 0, 0);
-        let pos = chess::ChessBoard::from(&FEN::from(pos.as_fen()));
+            pos.set_piece_on_square(Square::from(sq), Piece::from(pt - 2), Side::from(c as u8));
+        }
 
         base_inputs(&pos, f);
     }
