@@ -5,7 +5,7 @@ authors = ["Jamie Whiting"]
 
 [workspace]
 resolver = "2"
-members = ["policy", "value"]
+members = ["policy", "value", "chess", "utils"]
 
 [profile.release]
 lto = true

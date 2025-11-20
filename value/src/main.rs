@@ -17,7 +17,7 @@ use bullet::{
 };
 
 const HIDDEN_SIZE: usize = 2048;
-const END_SUPERBATCH: usize = 800;
+const END_SUPERBATCH: usize = 200;
 
 pub const QA: i16 = 128;
 pub const QB: i16 = 1024;
@@ -26,7 +26,7 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: "800sb".to_string(),
+        net_id: "StageA".to_string(),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 16384,
