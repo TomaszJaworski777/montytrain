@@ -126,3 +126,18 @@ impl ChessBoard {
         self.phase -= PHASE_VALUES[usize::from(piece)];
     }
 }
+
+impl From<&[Bitboard; 8]> for ChessBoard {
+    fn from(value: &[Bitboard; 8]) -> Self {
+        let mut board = Self::default();
+        
+        unsafe {
+            let ptr = value.as_ptr();
+
+            board.occupancy = *(ptr as *const [Bitboard; 2]);
+            board.pieces = *(ptr.add(2) as *const [Bitboard; 6]);
+        }
+
+        board
+    }
+}
