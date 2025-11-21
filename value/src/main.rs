@@ -26,7 +26,7 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: "StageB".to_string(),
+        net_id: "StageB-A".to_string(),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 16384,
