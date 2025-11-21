@@ -14,6 +14,7 @@ pub fn make_trainer<T: Default + SparseInputType>(
 ) -> ValueTrainer<AdamWOptimiser, T, NoOutputBuckets> {
     let inputs = T::default();
     let num_inputs = inputs.num_inputs();
+    let max_active = inputs.max_active();
 
     ValueTrainerBuilder::default()
         .wdl_output()
@@ -35,7 +36,7 @@ pub fn make_trainer<T: Default + SparseInputType>(
             let l2 = builder.new_affine("l2", 16, 128);
             let l3 = builder.new_affine("l3", 128, 3);
 
-            l0.init_with_effective_input_size(32);
+            l0.init_with_effective_input_size(max_active);
 
             let l0 = l0.forward(inputs).crelu().pairwise_mul();
             let l1 = l1.forward(l0).screlu();

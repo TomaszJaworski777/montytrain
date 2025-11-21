@@ -7,11 +7,11 @@ impl inputs::SparseInputType for ThreatInputs {
     type RequiredDataType = ChessBoard;
 
     fn num_inputs(&self) -> usize {
-        BASE_INPUTS * 2
+        BASE_INPUTS + STATE_INPUTS
     }
 
     fn max_active(&self) -> usize {
-        32
+        64
     }
 
     fn map_features<F: FnMut(usize, usize)>(&self, board: &Self::RequiredDataType, mut f: F) {
@@ -24,35 +24,36 @@ impl inputs::SparseInputType for ThreatInputs {
             bbs[pt] |= bit;
         }
         
-        let pos = chess::ChessBoard::from(&bbs);
+        let board = &chess::ChessBoard::from(&bbs);
 
-        let (diag, ortho) = pos.generate_pin_masks(pos.side());
+        let (diag, ortho) = board.generate_pin_masks(board.side());
         let defender_pin_mask = diag | ortho;
 
-        let (diag, ortho) = pos.generate_pin_masks(pos.side().flipped());
+        let (diag, ortho) = board.generate_pin_masks(board.side().flipped());
         let attack_pin_mask = diag | ortho;
 
-        let horizontal_mirror = if pos.king_square(pos.side()).file() > 3 {
+        let horizontal_mirror = if board.king_square(board.side()).file() > 3 {
             7
         } else {
             0
         };
 
-        let occ = pos.occupancy();
+        let occ = board.occupancy();
         occ.map(|square| {
-            let piece = pos.piece_on_square(square);
-            let color = pos.color_on_square(square);
+            let piece = board.piece_on_square(square);
+            let color = board.color_on_square(square);
 
-            let attack_pin_mask = attack_pin_mask & !Rays::get_ray(square, pos.king_square(pos.side().flipped()));
+            let attack_pin_mask = attack_pin_mask & !Rays::get_ray(square, board.king_square(board.side().flipped()));
 
-            let all_attackers = pos.all_attackers_to_square(occ, square);
-            let attackers = all_attackers & pos.occupancy_for_side(pos.side().flipped()) & !attack_pin_mask;
-            let defenders = all_attackers & pos.occupancy_for_side(pos.side()) & !defender_pin_mask;
+            let all_attackers = board.all_attackers_to_square(occ, square);
+            let attackers = all_attackers & board.occupancy_for_side(board.side().flipped()) & !attack_pin_mask;
+            let defenders = all_attackers & board.occupancy_for_side(board.side()) & !defender_pin_mask;
 
-            let (attacker, defender) = attacker_defender(&pos, attackers, defenders);
+            let (attacker, defender) = attacker_defender(board, attackers, defenders);
 
             let piece_index = 64 * (u8::from(piece) - u8::from(Piece::PAWN)) as usize;
-            let mut feat = [384, 0][usize::from(color == pos.side())] + piece_index + (usize::from(square) ^ horizontal_mirror);
+            let base = [384, 0][usize::from(color == board.side())] + piece_index + (usize::from(square) ^ horizontal_mirror);
+            let mut feat = base;
 
             if attacker != Piece::NONE {
                 feat += 768 * (usize::from(attacker) + 1)
@@ -62,6 +63,9 @@ impl inputs::SparseInputType for ThreatInputs {
                 feat += 768 * 7 * (usize::from(defender) + 1)
             }
 
+            f(feat, feat);
+
+            let feat = BASE_INPUTS + 768 * calculate_state(piece, attacker, defender, attackers, defenders) + base;
             f(feat, feat)
         });
     }
@@ -75,47 +79,85 @@ impl inputs::SparseInputType for ThreatInputs {
     }
 }
 
-const BASE_INPUTS: usize = 18816;
+const BASE_INPUTS: usize = 768 * 7 * 7;
+const STATE_INPUTS: usize = 768 * 6;
 
-fn attacker_defender(pos: &chess::ChessBoard, attackers: Bitboard, defenders: Bitboard) -> (Piece, Piece) {
-    let bb_pawn = pos.piece_mask(Piece::PAWN);
-    let bb_knight = pos.piece_mask(Piece::KNIGHT);
-    let bb_bishop = pos.piece_mask(Piece::BISHOP);
-    let bb_rook = pos.piece_mask(Piece::ROOK);
-    let bb_queen = pos.piece_mask(Piece::QUEEN);
-    let bb_king = pos.piece_mask(Piece::KING);
-
-    let attacker = if (attackers & bb_pawn).is_not_empty() {
-        Piece::PAWN
-    } else if (attackers & bb_knight).is_not_empty() {
-        Piece::KNIGHT
-    } else if (attackers & bb_bishop).is_not_empty() {
-        Piece::BISHOP
-    } else if (attackers & bb_rook).is_not_empty() {
-        Piece::ROOK
-    } else if (attackers & bb_queen).is_not_empty() {
-        Piece::QUEEN
-    } else if (attackers & bb_king).is_not_empty() {
-        Piece::KING
-    } else {
-        Piece::NONE
-    };
-
-    let defender = if (defenders & bb_pawn).is_not_empty() {
-        Piece::PAWN
-    } else if (defenders & bb_knight).is_not_empty() {
-        Piece::KNIGHT
-    } else if (defenders & bb_bishop).is_not_empty() {
-        Piece::BISHOP
-    } else if (defenders & bb_rook).is_not_empty() {
-        Piece::ROOK
-    } else if (defenders & bb_queen).is_not_empty() {
-        Piece::QUEEN
-    } else if (defenders & bb_king).is_not_empty() {
-        Piece::KING
-    } else {
-        Piece::NONE
-    };
-
+fn attacker_defender(board: &chess::ChessBoard, attackers: Bitboard, defenders: Bitboard) -> (Piece, Piece) {
+    let attacker = lowest_value_piece(board, attackers);
+    let defender = lowest_value_piece(board, defenders);
     (attacker, defender)
+}
+
+fn lowest_value_piece(board: &chess::ChessBoard, mask: Bitboard) -> Piece {
+    if mask.is_empty() {
+        return Piece::NONE;
+    }
+
+    if (mask & board.piece_mask(Piece::PAWN)).is_not_empty() {
+        Piece::PAWN
+    } else if (mask & board.piece_mask(Piece::KNIGHT)).is_not_empty() {
+        Piece::KNIGHT
+    } else if (mask & board.piece_mask(Piece::BISHOP)).is_not_empty() {
+        Piece::BISHOP
+    } else if (mask & board.piece_mask(Piece::ROOK)).is_not_empty() {
+        Piece::ROOK
+    } else if (mask & board.piece_mask(Piece::QUEEN)).is_not_empty() {
+        Piece::QUEEN
+    } else if (mask & board.piece_mask(Piece::KING)).is_not_empty() {
+        Piece::KING
+    } else {
+        Piece::NONE
+    }
+}
+
+fn calculate_state(victim: Piece, lowest_attacker: Piece, lowest_defender: Piece, attackers: Bitboard, defenders: Bitboard) -> usize {
+    let atk_cnt = attackers.pop_count();
+    let def_cnt = defenders.pop_count();
+
+    if atk_cnt + def_cnt == 0 {
+        return 5;
+    }
+
+    if def_cnt == 0 && atk_cnt > 0 {
+        return 0; 
+    }
+    
+    if atk_cnt == 0 && def_cnt > 0 {
+        return 4;
+    }
+
+    let v_victim = u8::from(victim) as usize;
+    let v_attacker = u8::from(lowest_attacker) as usize;
+    let v_defender = u8::from(lowest_defender) as usize;
+    
+    if atk_cnt == 1 && def_cnt == 1 {
+        if v_attacker < v_victim {
+            return 1;
+        } else if v_attacker > v_victim {
+            return 3;
+        } else {
+            return 2;
+        }
+    }
+
+    if atk_cnt > 1 && def_cnt <= atk_cnt && v_victim + v_defender > v_attacker {
+        return 1;
+    }
+
+    if atk_cnt > 1 && def_cnt == atk_cnt && v_victim + v_defender < v_attacker {
+        return 3;
+    }
+    
+    let diff = (def_cnt as i32) - (atk_cnt as i32);
+
+    if diff < 0 {
+        return 1;
+    } else if diff == 0 {
+        if v_attacker < v_victim {
+             return 1;
+        }
+        return 2;
+    } else {
+        return 3
+    }
 }
