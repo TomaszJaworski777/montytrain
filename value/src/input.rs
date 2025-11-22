@@ -1,5 +1,5 @@
 use bullet::game::{formats::bulletformat::ChessBoard, inputs};
-use chess::{Bitboard, Piece, Rays};
+use chess::{Bitboard, Piece, Rays, Side};
 
 #[derive(Clone, Copy, Default)]
 pub struct ThreatInputs;
@@ -26,11 +26,8 @@ impl inputs::SparseInputType for ThreatInputs {
         
         let board = &chess::ChessBoard::from(&bbs);
 
-        let (diag_stm, ortho_stm) = board.generate_pin_masks(board.side());
-        let defender_pin_mask = diag_stm | ortho_stm;
-
-        let (diag_nstm, ortho_nstm) = board.generate_pin_masks(board.side().flipped());
-        let attack_pin_mask = diag_nstm | ortho_nstm;
+        let (mut diag_stm, mut ortho_stm) = board.generate_pin_masks(board.side());
+        let (mut diag_nstm, mut ortho_nstm) = board.generate_pin_masks(board.side().flipped());
 
         let horizontal_mirror = if board.king_square(board.side()).file() > 3 {
             7
@@ -41,33 +38,46 @@ impl inputs::SparseInputType for ThreatInputs {
         //let rings = [Attacks::get_king_attacks(board.king_square(Side::WHITE)), Attacks::get_king_attacks(board.king_square(Side::BLACK))];
 
         let occ = board.occupancy();
-        occ.map(|square| {
-            let piece = board.piece_on_square(square);
-            let color = board.color_on_square(square);
+        let mut side_offset = 0;
+        for piece_color in [Side::WHITE, Side::BLACK] {
+            let defender_pin_mask = diag_stm | ortho_stm;
+            let attack_pin_mask = diag_nstm | ortho_nstm;
 
-            let attack_pin_mask = attack_pin_mask & !Rays::get_ray(square, board.king_square(board.side().flipped()));
+            let occ_stm = board.occupancy_for_side(piece_color);
+            let occ_nstm = board.occupancy_for_side(piece_color.flipped());
 
-            let all_attackers = board.all_attackers_to_square(occ, square);
-            let attackers = all_attackers & board.occupancy_for_side(board.side().flipped()) & !attack_pin_mask;
-            let defenders = all_attackers & board.occupancy_for_side(board.side()) & !defender_pin_mask;
+            for piece_idx in u8::from(Piece::PAWN)..=u8::from(Piece::KING) {
+                let piece = Piece::from(piece_idx);
+                let feat_idx = side_offset + 64 * (u8::from(piece) - u8::from(Piece::PAWN)) as usize;
 
-            let piece_index = 64 * (u8::from(piece) - u8::from(Piece::PAWN)) as usize;
-            let base = [384, 0][usize::from(color == board.side())] + piece_index + (usize::from(square) ^ horizontal_mirror);
+                board.piece_mask_for_side(piece, piece_color).map(|square| {
+                    let attack_pin_mask = attack_pin_mask & !Rays::get_ray(square, board.king_square(piece_color.flipped()));
 
-            let mut feat = 768 * calculate_state(board, piece, attackers, defenders);
+                    let all_attackers = board.all_attackers_to_square(occ, square);
+                    let attackers = all_attackers & occ_nstm & !attack_pin_mask;
+                    let defenders = all_attackers & occ_stm & !defender_pin_mask;
 
-            // if (if color == board.side() { diag_stm } else { diag_nstm }).get_bit(square) {
-            //     feat += 768 * 6;
-            // }
+                    let base = feat_idx + (usize::from(square) ^ horizontal_mirror);
 
-            // if (if color == board.side() { ortho_stm } else { ortho_nstm }).get_bit(square) {
-            //     feat += 768 * 6 * 2;
-            // }
+                    let mut feat = 768 * calculate_state(board, piece, attackers, defenders);
 
-            feat += base;
+                    // if (if color == board.side() { diag_stm } else { diag_nstm }).get_bit(square) {
+                    //     feat += 768 * 6;
+                    // }
 
-            f(feat, feat)
-        });
+                    // if (if color == board.side() { ortho_stm } else { ortho_nstm }).get_bit(square) {
+                    //     feat += 768 * 6 * 2;
+                    // }
+
+                    feat += base;
+
+                    f(feat, feat)
+                });
+            }
+
+            side_offset += 384;
+            (diag_stm, ortho_stm, diag_nstm, ortho_nstm) = (diag_nstm, ortho_nstm, diag_stm, ortho_stm);
+        }
     }
 
     fn shorthand(&self) -> String {
@@ -81,7 +91,7 @@ impl inputs::SparseInputType for ThreatInputs {
 
 const STATE_INPUTS: usize = 768 * 6;
 
-const PIECE_VALUES: [usize; 6] = [100, 300, 300, 500, 1000, 99999];
+const PIECE_VALUES: [usize; 6] = [100, 200, 300, 500, 650, 99999];
 fn calculate_state(board: &chess::ChessBoard, victim: Piece, attackers: Bitboard, defenders: Bitboard) -> usize {
     let lowest_attacker = lowest_value_piece(board, attackers);
     let lowest_defender = lowest_value_piece(board, defenders);
@@ -119,7 +129,7 @@ fn calculate_state(board: &chess::ChessBoard, victim: Piece, attackers: Bitboard
         return 0;
     }
 
-    if atk_cnt > 1 && def_cnt <= atk_cnt && v_victim + v_defender > v_attacker {
+    if atk_cnt > 1 && def_cnt < atk_cnt && v_victim + v_defender > v_attacker {
         return 1;
     }
 
