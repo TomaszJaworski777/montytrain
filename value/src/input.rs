@@ -1,6 +1,8 @@
 use bullet::game::{formats::bulletformat::ChessBoard, inputs};
 use chess::{Bitboard, Piece, Rays, Side};
 
+const STATE_INPUTS: usize = 768 * 6 * 2 * 2;
+
 #[derive(Clone, Copy, Default)]
 pub struct ThreatInputs;
 impl inputs::SparseInputType for ThreatInputs {
@@ -61,13 +63,13 @@ impl inputs::SparseInputType for ThreatInputs {
 
                     let mut feat = 768 * calculate_state(board, piece, attackers, defenders);
 
-                    // if (if color == board.side() { diag_stm } else { diag_nstm }).get_bit(square) {
-                    //     feat += 768 * 6;
-                    // }
+                    if diag_stm.get_bit(square) {
+                        feat += 768 * 6;
+                    }
 
-                    // if (if color == board.side() { ortho_stm } else { ortho_nstm }).get_bit(square) {
-                    //     feat += 768 * 6 * 2;
-                    // }
+                    if ortho_stm.get_bit(square) {
+                        feat += 768 * 6 * 2;
+                    }
 
                     feat += base;
 
@@ -89,9 +91,7 @@ impl inputs::SparseInputType for ThreatInputs {
     }
 }
 
-const STATE_INPUTS: usize = 768 * 6;
-
-const PIECE_VALUES: [usize; 6] = [100, 200, 300, 500, 650, 99999];
+const PIECE_VALUES: [usize; 6] = [100, 300, 330, 500, 950, 99999];
 fn calculate_state(board: &chess::ChessBoard, victim: Piece, attackers: Bitboard, defenders: Bitboard) -> usize {
     let lowest_attacker = lowest_value_piece(board, attackers);
     let lowest_defender = lowest_value_piece(board, defenders);
