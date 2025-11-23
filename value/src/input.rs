@@ -54,7 +54,8 @@ impl inputs::SparseInputType for ThreatInputs {
 
             for piece_idx in u8::from(Piece::PAWN)..=u8::from(Piece::KING) {
                 let piece = Piece::from(piece_idx);
-                let feat_idx = base_side_offset + 64 * (u8::from(piece) - u8::from(Piece::PAWN)) as usize;
+                let base_feat_idx = base_side_offset + 64 * (u8::from(piece) - u8::from(Piece::PAWN)) as usize;
+                let align_feat_idx = STATE_INPUTS + align_side_offset + 64 * (u8::from(piece) - u8::from(Piece::BISHOP)) as usize;
 
                 board.piece_mask_for_side(piece, piece_color).map(|square| {
                     let king_attack_ray = Rays::get_ray(square, enemy_king);
@@ -64,7 +65,7 @@ impl inputs::SparseInputType for ThreatInputs {
                     let attackers = all_attackers & occ_nstm & !attack_pin_mask;
                     let defenders = all_attackers & occ_stm & !defender_pin_mask;
 
-                    let base = feat_idx + (usize::from(square) ^ horizontal_mirror);
+                    let base = base_feat_idx + (usize::from(square) ^ horizontal_mirror);
 
                     let mut feat = 768 * calculate_state(board, piece, attackers, defenders);
 
@@ -103,7 +104,7 @@ impl inputs::SparseInputType for ThreatInputs {
                     };
 
                     if piece_idx >= u8::from(Piece::BISHOP) && piece_idx <= u8::from(Piece::QUEEN) && (is_king_xrayed || is_ring_xrayed) {
-                        let mut feat = STATE_INPUTS + align_side_offset + 64 * (u8::from(piece) - u8::from(Piece::BISHOP)) as usize;
+                        let mut feat = align_feat_idx + (usize::from(square) ^ horizontal_mirror);
                         
                         if is_king_xrayed {
                             feat += 384
