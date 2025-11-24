@@ -26,7 +26,7 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: "StageD2".to_string(),
+        net_id: "StageD3".to_string(),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 16384,
@@ -79,6 +79,8 @@ fn main() {
         "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
         "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
         "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+        "8/kpp5/b7/8/2Q5/8/8/5K2 w - - 0 1",
+        "1k1rqb2/2ppprpp/pp3p2/8/2P5/8/1QPPPPPP/RR4K1 w - - 0 1",
     ] {
         let vals = trainer.eval_raw_output(fen);
         println!("FEN: {fen}");
