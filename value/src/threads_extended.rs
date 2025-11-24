@@ -10,6 +10,7 @@ const KING_ATTACK_OFFSETS: usize = QUEEN_ATTACKS_OFFSET + 128 * 8 * 2 * 2 * 6;
 const SIZE: usize = KING_ATTACK_OFFSETS + 128 * 2 * 5;
 
 pub struct ThreatsExtended;
+
 #[allow(unused)]
 impl ThreatsExtended {
     pub const fn input_size() -> usize {
@@ -27,9 +28,6 @@ impl ThreatsExtended {
             board.mirror();
         }
 
-        let (mut diag_stm, mut ortho_stm) = board.generate_pin_masks(Side::WHITE);
-        let (mut diag_nstm, mut ortho_nstm) = board.generate_pin_masks(Side::BLACK);
-
         let bb_pawn = board.piece_mask(Piece::PAWN);
         let bb_knight = board.piece_mask(Piece::KNIGHT);
         let bb_bishop = board.piece_mask(Piece::BISHOP);
@@ -37,14 +35,15 @@ impl ThreatsExtended {
         let bb_queen = board.piece_mask(Piece::QUEEN);
         let bb_king = board.piece_mask(Piece::KING);
 
-        let get_piece_type = |sq_bit: Bitboard| -> Piece {
-            if (bb_pawn & sq_bit).is_not_empty() { return Piece::PAWN; }
-            if (bb_knight & sq_bit).is_not_empty() { return Piece::KNIGHT; }
-            if (bb_bishop & sq_bit).is_not_empty() { return Piece::BISHOP; }
-            if (bb_rook & sq_bit).is_not_empty() { return Piece::ROOK; }
-            if (bb_queen & sq_bit).is_not_empty() { return Piece::QUEEN; }
-            Piece::KING
-        };
+        let mut piece_map = [Piece::KING; 64];
+        bb_pawn.map(|sq| piece_map[usize::from(sq)] = Piece::PAWN);
+        bb_knight.map(|sq| piece_map[usize::from(sq)] = Piece::KNIGHT);
+        bb_bishop.map(|sq| piece_map[usize::from(sq)] = Piece::BISHOP);
+        bb_rook.map(|sq| piece_map[usize::from(sq)] = Piece::ROOK);
+        bb_queen.map(|sq| piece_map[usize::from(sq)] = Piece::QUEEN);
+
+        let (mut diag_stm, mut ortho_stm) = board.generate_pin_masks(Side::WHITE);
+        let (mut diag_nstm, mut ortho_nstm) = board.generate_pin_masks(Side::BLACK);
 
         let mut base_side_offset = 0;
         let mut align_side_offset = 0;
@@ -54,7 +53,6 @@ impl ThreatsExtended {
         let occ = board.occupancy();
 
         for piece_color in [Side::WHITE, Side::BLACK] {
-            let occ_stm = board.occupancy_for_side(piece_color);
             let occ_nstm = board.occupancy_for_side(piece_color.flipped());
 
             let enemy_king = board.king_square(piece_color.flipped());
@@ -67,8 +65,6 @@ impl ThreatsExtended {
 
                 board.piece_mask_for_side(piece, piece_color).map(|square| {
                     let sq_idx = usize::from(square);
-                    let sq_bit = Bitboard::from(square);
-
                     let mut feat = base_feat_idx + sq_idx;
 
                     if diag_stm.get_bit(square) { feat += 768; }
@@ -87,13 +83,10 @@ impl ThreatsExtended {
                         let attacks = b_attacks | r_attacks;
                         let enemy_king_bb = Bitboard::from(enemy_king);
 
-                        let is_ring = (attacks & enemy_ring).is_not_empty();
-                        let is_king = (attacks & enemy_king_bb).is_not_empty();
-
-                        if is_king || is_ring {
-                            let mut feat = align_feat_idx + sq_idx;
-                            if is_king { feat += 384; }
-                            process_input(feat);
+                        if (attacks & enemy_king_bb).is_not_empty() {
+                            process_input(align_feat_idx + sq_idx + 384);
+                        } else if (attacks & enemy_ring).is_not_empty() {
+                            process_input(align_feat_idx + sq_idx);
                         }
                     }
 
@@ -101,10 +94,12 @@ impl ThreatsExtended {
                         Piece::PAWN => {
                             let attacks = Attacks::get_pawn_attacks(square, piece_color);
                             let valid_targets = attacks & (bb_pawn | bb_knight | bb_rook);
+                            
                             valid_targets.map(|t_sq| {
                                 let t_idx = usize::from(t_sq);
-                                let is_enemy = board.color_on_square(t_sq) != piece_color;
-                                let t_piece = get_piece_type(Bitboard::from(t_sq));
+                                let is_enemy = occ_nstm.get_bit(t_sq);
+                                let t_piece = piece_map[t_idx];
+                                
                                 let type_code = match t_piece { Piece::PAWN => 0, Piece::KNIGHT => 1, _ => 2 };
                                 let dir = get_pawn_dir(sq_idx, t_idx, piece_color == Side::WHITE);
                                 
@@ -126,8 +121,8 @@ impl ThreatsExtended {
                             let valid_targets = attacks & occ;
                             valid_targets.map(|t_sq| {
                                 let t_idx = usize::from(t_sq);
-                                let is_enemy = board.color_on_square(t_sq) != piece_color;
-                                let t_piece = get_piece_type(Bitboard::from(t_sq));
+                                let is_enemy = occ_nstm.get_bit(t_sq);
+                                let t_piece = piece_map[t_idx];
 
                                 if t_piece == piece && t_idx < sq_idx { return; }
 
@@ -150,8 +145,10 @@ impl ThreatsExtended {
                             let attacks = Attacks::get_king_attacks(square);
                             let valid_targets = attacks & occ & !bb_queen & !bb_king;
                             valid_targets.map(|t_sq| {
-                                let t_piece = get_piece_type(Bitboard::from(t_sq));
-                                let is_enemy = board.color_on_square(t_sq) != piece_color;
+                                let t_idx = usize::from(t_sq);
+                                let t_piece = piece_map[t_idx];
+                                let is_enemy = occ_nstm.get_bit(t_sq);
+
                                 process_input(KING_ATTACK_OFFSETS 
                                     + (u8::from(t_piece) as usize) * 256 
                                     + (is_enemy as usize) * 128 
@@ -181,8 +178,8 @@ impl ThreatsExtended {
                             let valid_direct = direct_hits & target_mask;
                             valid_direct.map(|t_sq| {
                                 let t_idx = usize::from(t_sq);
-                                let is_enemy = board.color_on_square(t_sq) != piece_color;
-                                let t_piece = get_piece_type(Bitboard::from(t_sq));
+                                let is_enemy = occ_nstm.get_bit(t_sq);
+                                let t_piece = piece_map[t_idx];
                                 
                                 if t_piece == piece && t_idx < sq_idx { return; }
                                 
@@ -208,8 +205,8 @@ impl ThreatsExtended {
                             let valid_xray = xray_attacks_bb & xray_occ & target_mask;
                             valid_xray.map(|t_sq| {
                                 let t_idx = usize::from(t_sq);
-                                let is_enemy = board.color_on_square(t_sq) != piece_color;
-                                let t_piece = get_piece_type(Bitboard::from(t_sq));
+                                let is_enemy = occ_nstm.get_bit(t_sq);
+                                let t_piece = piece_map[t_idx];
 
                                 if t_piece == piece && t_idx < sq_idx { return; }
 
@@ -236,6 +233,7 @@ impl ThreatsExtended {
             align_side_offset += 192;
             pawn_attack_offset += 48;
             piece_attack_offset += 64;
+
             (diag_stm, ortho_stm, diag_nstm, ortho_nstm) = (diag_nstm, ortho_nstm, diag_stm, ortho_stm);
         }
     }

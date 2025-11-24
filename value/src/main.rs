@@ -27,11 +27,11 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: "StageD3".to_string(),
+        net_id: "StageD4".to_string(),
         eval_scale: 400.0,
         steps: TrainingSteps {
-            batch_size: 16384,
-            batches_per_superbatch: 6104,
+            batch_size: 65_536,
+            batches_per_superbatch: 1526,
             start_superbatch: 1,
             end_superbatch: END_SUPERBATCH,
         },
@@ -67,7 +67,7 @@ fn main() {
 
     let data_loader = loader::MontyBinpackLoader::new(
         "./interleaved-value.bin",
-        128000,
+        48000,
         8,
         filter,
     );
