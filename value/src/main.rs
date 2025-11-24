@@ -1,5 +1,6 @@
 mod arch;
 mod input;
+mod threads_extended;
 
 use arch::make_trainer;
 use input::ThreatInputs;
