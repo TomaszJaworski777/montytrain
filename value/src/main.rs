@@ -18,7 +18,7 @@ use bullet::{
 };
 
 const HIDDEN_SIZE: usize = 2048;
-const END_SUPERBATCH: usize = 200;
+const END_SUPERBATCH: usize = 800;
 
 pub const QA: i16 = 128;
 pub const QB: i16 = 1024;
@@ -27,7 +27,7 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: "StageD4".to_string(),
+        net_id: "StageD5".to_string(),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 65_536,
@@ -38,7 +38,7 @@ fn main() {
         wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
         lr_scheduler: lr::ExponentialDecayLR {
             initial_lr: 0.001,
-            final_lr: 0.00001,
+            final_lr: 0.0000001,
             final_superbatch: END_SUPERBATCH,
         },
         save_rate: 10,
@@ -67,7 +67,7 @@ fn main() {
 
     let data_loader = loader::MontyBinpackLoader::new(
         "./interleaved-value.bin",
-        48000,
+        64000,
         8,
         filter,
     );
