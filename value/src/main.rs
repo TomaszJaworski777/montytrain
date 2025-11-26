@@ -27,7 +27,7 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: "StageD5".to_string(),
+        net_id: "MontyThreats".to_string(),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 65_536,
@@ -55,7 +55,7 @@ fn main() {
     trainer.optimiser.set_params(optimiser_params);
 
     let settings = LocalSettings {
-        threads: 4,
+        threads: 8,
         test_set: None,
         output_directory: "value_checkpoints",
         batch_queue_size: 32,
@@ -67,7 +67,7 @@ fn main() {
 
     let data_loader = loader::MontyBinpackLoader::new(
         "./interleaved-value.bin",
-        64000,
+        96000,
         8,
         filter,
     );

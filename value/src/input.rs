@@ -9,7 +9,7 @@ impl inputs::SparseInputType for ThreatInputs {
     type RequiredDataType = ChessBoard;
 
     fn num_inputs(&self) -> usize {
-        ThreatsExtended::input_size()
+        ThreatsExtended::INPUT_SIZE
     }
 
     fn max_active(&self) -> usize {
