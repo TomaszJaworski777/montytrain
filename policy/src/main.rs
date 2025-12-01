@@ -19,7 +19,7 @@ use data::MontyDataLoader;
 
 fn main() {
     let hl = 4096;
-    let dataloader = MontyDataLoader::new("./interleaved.bin", 128000, 4, 8);
+    let dataloader = MontyDataLoader::new("./interleaved.bin", 96000, 8, 8);
 
     let device = CudaDevice::new(0).unwrap();
 

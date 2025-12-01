@@ -41,7 +41,7 @@ fn main() {
             final_lr: 0.0000001,
             final_superbatch: END_SUPERBATCH,
         },
-        save_rate: 10,
+        save_rate: 50,
     };
 
     let optimiser_params = optimiser::AdamWParams {
@@ -72,6 +72,7 @@ fn main() {
         filter,
     );
 
+    trainer.load_from_checkpoint("./value_checkpoints/MontyThreats-720");
     trainer.run(&schedule, &settings, &data_loader);
 
     for fen in [
