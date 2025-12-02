@@ -13,7 +13,7 @@ impl inputs::SparseInputType for ThreatInputs {
     }
 
     fn max_active(&self) -> usize {
-        256
+        128
     }
 
     fn map_features<F: FnMut(usize, usize)>(&self, board: &Self::RequiredDataType, mut f: F) {

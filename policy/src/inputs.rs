@@ -1,19 +1,12 @@
-use montyformat::chess::consts::{Rank, IN_BETWEEN, LINE_THROUGH};
+use montyformat::chess::consts::IN_BETWEEN;
 use montyformat::chess::{Attacks, Flag, Move, Piece, Position, Side};
-
-macro_rules! pop_lsb {
-    ($sq:ident, $bb:expr) => {
-        let $sq = ($bb).trailing_zeros() as usize;
-        $bb &= $bb - 1;
-    };
-}
 
 pub trait See {
     fn see(&self, mov: &Move, threshold: i32) -> bool;
 }
 
 pub const MAX_MOVES: usize = 64;
-pub const INPUT_SIZE: usize = 768 * 4;
+pub const INPUT_SIZE: usize = 768 * 4 * 3;
 pub const MAX_ACTIVE_BASE: usize = 32;
 pub const NUM_MOVES_INDICES: usize = 2 * FROM_TO;
 
@@ -58,47 +51,59 @@ pub fn map_base_inputs<F: FnMut(usize)>(pos: &Position, mut f: F) {
     let threats = pos.threats_by(pos.stm() ^ 1);
     let defences = pos.threats_by(pos.stm());
 
-    for piece in Piece::PAWN..=Piece::KING {
-        let pc = 64 * (piece - 2);
+    let bbs = pos.bbs();
+    let rq = bbs[Piece::QUEEN] | bbs[Piece::ROOK];
+    let bq = bbs[Piece::QUEEN] | bbs[Piece::BISHOP];
+    let mut pinned = [0, 0, 0, 0];
 
-        let mut our_bb = pos.piece(piece) & pos.piece(pos.stm());
-        let mut opp_bb = pos.piece(piece) & pos.piece(pos.stm() ^ 1);
+    for defender_idx in 0..=1 {
+        let attacker_idx = 1 - defender_idx;
+        let ksq = (bbs[defender_idx] & bbs[Piece::KING]).trailing_zeros() as usize;
 
-        while our_bb > 0 {
-            let sq = our_bb.trailing_zeros() as usize;
-            let mut feat = pc + (sq ^ flip);
+        let pins = [
+            Attacks::bishop(ksq, bbs[attacker_idx]) & bbs[attacker_idx] & bq,
+            Attacks::rook(ksq, bbs[attacker_idx]) & bbs[attacker_idx] & rq,
+        ];
 
-            let bit = 1 << sq;
-            if threats & bit > 0 {
-                feat += 768;
-            }
+        for (idx, &pinners) in pins.iter().enumerate() {
+            map_bb(pinners, |pinner| {
+                let pin = IN_BETWEEN[ksq][pinner] & bbs[defender_idx];
+                if pin.count_ones() == 1 {
+                    pinned[idx + defender_idx * 2] |= pin;
+                }
+            });
+        }
+    }
 
-            if defences & bit > 0 {
-                feat += 768 * 2;
-            }
+    for side in [Side::WHITE, Side::BLACK] {
+        for piece in Piece::PAWN..=Piece::KING { 
+            let pc = 64 * (piece - 2);
+            let piece_mask = pos.piece(piece) & pos.piece(side);
+            map_bb(piece_mask, |sq| {
+                let mut feat = [0, 384][side] + pc + (sq ^ flip);
 
-            f(feat);
+                let bit = 1 << sq;
+                if threats & bit > 0 {
+                    feat += 768;
+                }
 
-            our_bb &= our_bb - 1;
+                if defences & bit > 0 {
+                    feat += 768 * 2;
+                }
+
+                if pinned[0] & (1 << sq) > 0 {
+                    feat += 768 * 4;
+                }
+                
+                if pinned[1] & (1 << sq) > 0 {
+                    feat += 768 * 4 * 2;
+                }
+
+                f(feat);
+            });
         }
 
-        while opp_bb > 0 {
-            let sq = opp_bb.trailing_zeros() as usize;
-            let mut feat = 384 + pc + (sq ^ flip);
-
-            let bit = 1 << sq;
-            if threats & bit > 0 {
-                feat += 768;
-            }
-
-            if defences & bit > 0 {
-                feat += 768 * 2;
-            }
-
-            f(feat);
-
-            opp_bb &= opp_bb - 1;
-        }
+        (pinned[0], pinned[1], pinned[2], pinned[3]) = (pinned[2], pinned[3], pinned[0], pinned[1]);
     }
 }
 
@@ -715,3 +720,11 @@ const KING: [u64; 64] = init!(|sq, 64| {
     k |= ((k & !A) >> 1) | ((k & !H) << 1);
     k ^ (1 << sq)
 });
+
+fn map_bb<F: FnMut(usize)>(mut bb: u64, mut f: F) {
+    while bb > 0 {
+        let sq = bb.trailing_zeros() as usize;
+        f(sq);
+        bb &= bb - 1;
+    }
+}
