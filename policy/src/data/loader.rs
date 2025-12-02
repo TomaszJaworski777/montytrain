@@ -60,7 +60,7 @@ pub fn prepare(data: &[DecompressedData], threads: usize) -> PreparedBatchHost {
                         phase += point.pos.piece(pc).count_ones() as usize * PHASE[pc - 2]
                     }
 
-                    if phase > 8 {
+                    if phase <= 8 {
                         continue;
                     }
 

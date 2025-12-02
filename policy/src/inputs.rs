@@ -6,7 +6,7 @@ pub trait See {
 }
 
 pub const MAX_MOVES: usize = 64;
-pub const INPUT_SIZE: usize = 768 * 4; //* 3;
+pub const INPUT_SIZE: usize = 768 * 4;
 pub const MAX_ACTIVE_BASE: usize = 32;
 pub const NUM_MOVES_INDICES: usize = 2 * FROM_TO;
 
@@ -55,30 +55,6 @@ pub fn map_base_inputs<F: FnMut(usize)>(pos: &Position, mut f: F) {
         defences = defences.swap_bytes();
     }
 
-    let bbs = pos.bbs();
-    let rq = bbs[Piece::QUEEN] | bbs[Piece::ROOK];
-    let bq = bbs[Piece::QUEEN] | bbs[Piece::BISHOP];
-    let mut pinned = [0, 0, 0, 0];
-
-    for defender_idx in 0..=1 {
-        let attacker_idx = 1 - defender_idx;
-        let ksq = (bbs[defender_idx] & bbs[Piece::KING]).trailing_zeros() as usize;
-
-        let pins = [
-            Attacks::bishop(ksq, bbs[attacker_idx]) & bbs[attacker_idx] & bq,
-            Attacks::rook(ksq, bbs[attacker_idx]) & bbs[attacker_idx] & rq,
-        ];
-
-        for (idx, &pinners) in pins.iter().enumerate() {
-            map_bb(pinners, |pinner| {
-                let pin = IN_BETWEEN[ksq][pinner] & bbs[defender_idx];
-                if pin.count_ones() == 1 {
-                    pinned[idx + defender_idx * 2] |= pin;
-                }
-            });
-        }
-    }
-
     for piece in Piece::PAWN..=Piece::KING {
         let pc = 64 * (piece - 2);
 
@@ -102,14 +78,6 @@ pub fn map_base_inputs<F: FnMut(usize)>(pos: &Position, mut f: F) {
                 feat += 768 * 2;
             }
 
-            // if pinned[0] & (1 << sq) > 0 {
-            //     feat += 768 * 4;
-            // }
-
-            // if pinned[1] & (1 << sq) > 0 {
-            //     feat += 768 * 4 * 2;
-            // }
-
             f(feat);
         });
 
@@ -124,14 +92,6 @@ pub fn map_base_inputs<F: FnMut(usize)>(pos: &Position, mut f: F) {
             if defences & bit > 0 {
                 feat += 768 * 2;
             }
-
-            // if pinned[2] & (1 << sq) > 0 {
-            //     feat += 768 * 4;
-            // }
-
-            // if pinned[3] & (1 << sq) > 0 {
-            //     feat += 768 * 4 * 2;
-            // }
 
             f(feat);
         });
