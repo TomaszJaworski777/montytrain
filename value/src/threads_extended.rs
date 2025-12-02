@@ -8,11 +8,8 @@ pub struct ThreatsExtended;
 
 impl ThreatsExtended {
     /// Total input size matching Monty reference (ValueOffsets::END * 2 + 768)
-    pub const INPUT_SIZE: usize = ThreatsExtended::QUEEN_XRAY_OFFSET + 128 * 8 * 5;
+    pub const INPUT_SIZE: usize = ValueOffsets::END * 2 + 768 * 3;
     const THREATS_OFFSET: usize = ValueOffsets::END * 2;
-    const BISHOP_XRAY_OFFSET: usize = ValueOffsets::END * 2 + 768 * 3;
-    const ROOK_XRAY_OFFSET: usize = ThreatsExtended::BISHOP_XRAY_OFFSET + 128 * 4 * 5;
-    const QUEEN_XRAY_OFFSET: usize = ThreatsExtended::ROOK_XRAY_OFFSET + 128 * 4 * 5;
 
     pub fn map_inputs<F: FnMut(usize)>(board: &chess::ChessBoard, mut process_input: F) {
         let mut board = *board;
@@ -87,32 +84,6 @@ impl ThreatsExtended {
                             process_input(side_offset + idx);
                         }
                     });
-
-                    //C. Xrays
-                    if piece_idx < 2 || piece_idx > 4 {
-                        return;
-                    }
-
-                    let xray_occ = occ & !attacks_bb;
-                    let xray_attacks_bb = match piece {
-                        Piece::BISHOP => Attacks::get_bishop_attacks(src, xray_occ),
-                        Piece::ROOK => Attacks::get_rook_attacks(src, xray_occ),
-                        _ => Attacks::get_bishop_attacks(src, xray_occ) | Attacks::get_rook_attacks(src, xray_occ),
-                    };
-
-                    let valid_xray = xray_attacks_bb & xray_occ & enemy_occ & !board.piece_mask(Piece::PAWN);
-
-                    let offset = match piece {
-                        Piece::BISHOP => ThreatsExtended::BISHOP_XRAY_OFFSET,
-                        Piece::ROOK => ThreatsExtended::ROOK_XRAY_OFFSET,
-                        _ => ThreatsExtended::QUEEN_XRAY_OFFSET,
-                    };
-
-                    valid_xray.map(|dest| {
-                        let target_type = (piece_map[usize::from(dest)] % 6) - 1;
-                        let dir = get_slider_dir(usize::from(src), usize::from(dest), (piece_idx as u8) - u8::from(Piece::BISHOP));
-                        process_input(offset + (64 * side_idx) + sq_idx + (128 * target_type) + (640 * dir))
-                    });
                 });
             }
 
@@ -121,31 +92,6 @@ impl ThreatsExtended {
     }
 }
 
-
-fn get_slider_dir(src: usize, dest: usize, mode: u8) -> usize {
-    let val = SLIDER_DIR_LUT[(src << 6) | dest] as usize;
-    if mode == 2 { val } else { val >> 1 }
-}
-
-const SLIDER_DIR_LUT: [u8; 4096] = {
-    let mut lut = [0; 4096];
-    let mut src = 0;
-    while src < 64 {
-        let mut dst = 0;
-        while dst < 64 {
-            let (r1, f1) = (src / 8, src % 8);
-            let (r2, f2) = (dst / 8, dst % 8);
-            let val = if f1 == f2 { if r2 > r1 { 0 } else { 4 } } 
-            else if r1 == r2 { if f2 > f1 { 2 } else { 6 } } 
-            else if r2 > r1 { if f2 > f1 { 1 } else { 7 } } 
-            else { if f2 > f1 { 3 } else { 5 } };
-            lut[src * 64 + dst] = val;
-            dst += 1;
-        }
-        src += 1;
-    }
-    lut
-};
 // =============================================================================
 //  Logic Mapping
 // =============================================================================
