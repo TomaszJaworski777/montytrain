@@ -6,7 +6,7 @@ pub trait See {
 }
 
 pub const MAX_MOVES: usize = 64;
-pub const INPUT_SIZE: usize = 768 * 4 * 3;
+pub const INPUT_SIZE: usize = 768 * 4; //* 3;
 pub const MAX_ACTIVE_BASE: usize = 32;
 pub const NUM_MOVES_INDICES: usize = 2 * FROM_TO;
 
@@ -102,13 +102,13 @@ pub fn map_base_inputs<F: FnMut(usize)>(pos: &Position, mut f: F) {
                 feat += 768 * 2;
             }
 
-            if pinned[0] & (1 << sq) > 0 {
-                feat += 768 * 4;
-            }
+            // if pinned[0] & (1 << sq) > 0 {
+            //     feat += 768 * 4;
+            // }
 
-            if pinned[1] & (1 << sq) > 0 {
-                feat += 768 * 4 * 2;
-            }
+            // if pinned[1] & (1 << sq) > 0 {
+            //     feat += 768 * 4 * 2;
+            // }
 
             f(feat);
         });
@@ -125,13 +125,13 @@ pub fn map_base_inputs<F: FnMut(usize)>(pos: &Position, mut f: F) {
                 feat += 768 * 2;
             }
 
-            if pinned[2] & (1 << sq) > 0 {
-                feat += 768 * 4;
-            }
+            // if pinned[2] & (1 << sq) > 0 {
+            //     feat += 768 * 4;
+            // }
 
-            if pinned[3] & (1 << sq) > 0 {
-                feat += 768 * 4 * 2;
-            }
+            // if pinned[3] & (1 << sq) > 0 {
+            //     feat += 768 * 4 * 2;
+            // }
 
             f(feat);
         });

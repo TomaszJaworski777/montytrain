@@ -5,7 +5,7 @@ use acyclib::{
         DataLoadingError,
     },
 };
-use montyformat::chess::Move;
+use montyformat::chess::{Move, Piece};
 
 use super::reader::{DataReader, DecompressedData};
 use crate::inputs::{self, INPUT_SIZE, MAX_ACTIVE_BASE, MAX_MOVES, NUM_MOVES_INDICES};
@@ -53,6 +53,17 @@ pub fn prepare(data: &[DecompressedData], threads: usize) -> PreparedBatchHost {
                     let moves_offset = MAX_MOVES * i;
 
                     let mut j = 0;
+                    
+                    const PHASE: [usize; 6] = [0, 1, 1, 2, 4, 0];
+                    let mut phase = 0;
+                    for pc in Piece::KNIGHT..Piece::KING {
+                        phase += point.pos.piece(pc).count_ones() as usize * PHASE[pc - 2]
+                    }
+
+                    if phase > 8 {
+                        continue;
+                    }
+
                     inputs::map_base_inputs(&point.pos, |feat| {
                         assert!(feat < INPUT_SIZE);
                         input_chunk[input_offset + j] = feat as i32;
