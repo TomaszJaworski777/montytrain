@@ -44,67 +44,113 @@ pub fn map_move_to_index(pos: &Position, mov: Move) -> usize {
 }
 
 pub fn map_base_inputs<F: FnMut(usize)>(pos: &Position, mut f: F) {
-    let vert = if pos.stm() == Side::BLACK { 56 } else { 0 };
-    let hori = if pos.king_index() % 8 > 3 { 7 } else { 0 };
-    let flip = vert ^ hori;
+    let flip = pos.stm() == Side::BLACK;
+    let hm = if pos.king_index() % 8 > 3 { 7 } else { 0 };
 
-    let threats = pos.threats_by(pos.stm() ^ 1);
-    let defences = pos.threats_by(pos.stm());
+    let mut threats = pos.threats_by(pos.stm() ^ 1);
+    let mut defences = pos.threats_by(pos.stm());
 
-    let bbs = pos.bbs();
-    let rq = bbs[Piece::QUEEN] | bbs[Piece::ROOK];
-    let bq = bbs[Piece::QUEEN] | bbs[Piece::BISHOP];
-    let mut pinned = [0, 0, 0, 0];
-
-    for defender_idx in 0..=1 {
-        let attacker_idx = 1 - defender_idx;
-        let ksq = (bbs[defender_idx] & bbs[Piece::KING]).trailing_zeros() as usize;
-
-        let pins = [
-            Attacks::bishop(ksq, bbs[attacker_idx]) & bbs[attacker_idx] & bq,
-            Attacks::rook(ksq, bbs[attacker_idx]) & bbs[attacker_idx] & rq,
-        ];
-
-        for (idx, &pinners) in pins.iter().enumerate() {
-            map_bb(pinners, |pinner| {
-                let pin = IN_BETWEEN[ksq][pinner] & bbs[defender_idx];
-                if pin.count_ones() == 1 {
-                    pinned[idx + defender_idx * 2] |= pin;
-                }
-            });
-        }
+    if flip {
+        threats = threats.swap_bytes();
+        defences = defences.swap_bytes();
     }
 
-    for side in [Side::WHITE, Side::BLACK] {
-        for piece in Piece::PAWN..=Piece::KING { 
-            let pc = 64 * (piece - 2);
-            let piece_mask = pos.piece(piece) & pos.piece(side);
-            map_bb(piece_mask, |sq| {
-                let mut feat = [0, 384][side] + pc + (sq ^ flip);
+    // let bbs = pos.bbs();
+    // let rq = bbs[Piece::QUEEN] | bbs[Piece::ROOK];
+    // let bq = bbs[Piece::QUEEN] | bbs[Piece::BISHOP];
+    // let mut pinned = [0, 0, 0, 0];
 
-                let bit = 1 << sq;
-                if threats & bit > 0 {
-                    feat += 768;
-                }
+    // for defender_idx in 0..=1 {
+    //     let attacker_idx = 1 - defender_idx;
+    //     let ksq = (bbs[defender_idx] & bbs[Piece::KING]).trailing_zeros() as usize;
 
-                if defences & bit > 0 {
-                    feat += 768 * 2;
-                }
+    //     let pins = [
+    //         Attacks::bishop(ksq, bbs[attacker_idx]) & bbs[attacker_idx] & bq,
+    //         Attacks::rook(ksq, bbs[attacker_idx]) & bbs[attacker_idx] & rq,
+    //     ];
 
-                if pinned[0] & (1 << sq) > 0 {
-                    feat += 768 * 4;
-                }
-                
-                if pinned[1] & (1 << sq) > 0 {
-                    feat += 768 * 4 * 2;
-                }
+    //     for (idx, &pinners) in pins.iter().enumerate() {
+    //         map_bb(pinners, |pinner| {
+    //             let pin = IN_BETWEEN[ksq][pinner] & bbs[defender_idx];
+    //             if pin.count_ones() == 1 {
+    //                 pinned[idx + defender_idx * 2] |= pin;
+    //             }
+    //         });
+    //     }
+    // }
 
-                f(feat);
-            });
+    for piece in Piece::PAWN..=Piece::KING {
+        let pc = 64 * (piece - 2);
+
+        let mut our_bb = pos.piece(piece) & pos.piece(pos.stm());
+        let mut opp_bb = pos.piece(piece) & pos.piece(pos.stm() ^ 1);
+
+        if flip {
+            our_bb = our_bb.swap_bytes();
+            opp_bb = opp_bb.swap_bytes();
         }
 
-        (pinned[0], pinned[1], pinned[2], pinned[3]) = (pinned[2], pinned[3], pinned[0], pinned[1]);
+        map_bb(our_bb, |sq| {
+            let mut feat = pc + usize::from(sq ^ hm);
+
+            let bit = 1 << sq;
+            if threats & bit > 0 {
+                feat += 768;
+            }
+
+            if defences & bit > 0 {
+                feat += 768 * 2;
+            }
+
+            f(feat);
+        });
+
+        map_bb(opp_bb, |sq| {
+            let mut feat = 384 + pc + usize::from(sq ^ hm);
+
+            let bit = 1 << sq;
+            if threats & bit > 0 {
+                feat += 768;
+            }
+
+            if defences & bit > 0 {
+                feat += 768 * 2;
+            }
+
+            f(feat);
+        });
     }
+
+    // for side in [Side::WHITE, Side::BLACK] {
+    //     for piece in Piece::PAWN..=Piece::KING { 
+    //         let pc = 64 * (piece - 2);
+    //         let piece_mask = pos.piece(piece) & pos.piece(side);
+    //         map_bb(piece_mask, |sq| {
+    //             let mut feat = [0, 384][side] + pc + (sq ^ flip);
+
+    //             let bit = 1 << sq;
+    //             if threats & bit > 0 {
+    //                 feat += 768;
+    //             }
+
+    //             if defences & bit > 0 {
+    //                 feat += 768 * 2;
+    //             }
+
+    //             if pinned[0] & (1 << sq) > 0 {
+    //                 feat += 768 * 4;
+    //             }
+
+    //             if pinned[1] & (1 << sq) > 0 {
+    //                 feat += 768 * 4 * 2;
+    //             }
+
+    //             f(feat);
+    //         });
+    //     }
+
+    //     (pinned[0], pinned[1], pinned[2], pinned[3]) = (pinned[2], pinned[3], pinned[0], pinned[1]);
+    // }
 }
 
 const SEE_VALS: [i32; 8] = [0, 0, 100, 450, 450, 650, 1250, 0];
