@@ -59,7 +59,7 @@ pub fn prepare(data: &[DecompressedData], threads: usize) -> PreparedBatchHost {
                         piece_count += point.pos.piece(pc).count_ones() as usize;
                     }
 
-                    if piece_count <= 6 {
+                    if piece_count > 6 {
                         continue;
                     }
 
