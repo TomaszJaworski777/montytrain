@@ -72,7 +72,6 @@ fn main() {
         filter,
     );
 
-    trainer.load_from_checkpoint("./value_checkpoints/MontyThreats-720");
     trainer.run(&schedule, &settings, &data_loader);
 
     for fen in [

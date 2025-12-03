@@ -53,15 +53,6 @@ pub fn prepare(data: &[DecompressedData], threads: usize) -> PreparedBatchHost {
                     let moves_offset = MAX_MOVES * i;
 
                     let mut j = 0;
-                    
-                    let mut piece_count = 0;
-                    for pc in Piece::KNIGHT..Piece::KING {
-                        piece_count += point.pos.piece(pc).count_ones() as usize;
-                    }
-
-                    if piece_count > 6 {
-                        continue;
-                    }
 
                     inputs::map_base_inputs(&point.pos, |feat| {
                         assert!(feat < INPUT_SIZE);

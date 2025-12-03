@@ -6,8 +6,7 @@ use std::{
 };
 
 use montyformat::{
-    chess::{Castling, Move, Position},
-    FastDeserialise, MontyFormat,
+    FastDeserialise, MontyFormat, chess::{Castling, Move, Piece, Position}
 };
 
 use crate::inputs::MAX_MOVES;
@@ -221,6 +220,15 @@ fn parse_into_buffer(game: &[u8], buffer: &mut Vec<DecompressedData>) {
 
         if num_moves > 1 && num_moves <= MAX_MOVES {
             let mut policy_data = DecompressedData { pos, castling, moves: [(0, 0); MAX_MOVES], num: num_moves };
+
+            let mut piece_count = 0;
+            for pc in Piece::KNIGHT..Piece::KING {
+                piece_count += pos.piece(pc).count_ones() as usize;
+            }
+
+            if piece_count <= 6 {
+                continue;
+            }
 
             let mut count = 0;
             pos.map_legal_moves(&castling, |mov| {
