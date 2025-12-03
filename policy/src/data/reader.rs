@@ -221,21 +221,6 @@ fn parse_into_buffer(game: &[u8], buffer: &mut Vec<DecompressedData>) {
         if num_moves > 1 && num_moves <= MAX_MOVES {
             let mut policy_data = DecompressedData { pos, castling, moves: [(0, 0); MAX_MOVES], num: num_moves };
 
-            let mut piece_count = 0;
-            for pc in Piece::KNIGHT..Piece::KING {
-                piece_count += pos.piece(pc).count_ones() as usize;
-            }
-
-            if piece_count > 6 {
-                for _ in 0..num_moves {
-                    let _ = read_into_primitive!(reader, u8);
-                }
-
-                pos.make(best_move, &castling);
-
-                continue;
-            }
-
             let mut count = 0;
             pos.map_legal_moves(&castling, |mov| {
                 policy_data.moves[count].0 = mov.into();
