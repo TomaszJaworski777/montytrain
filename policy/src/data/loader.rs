@@ -54,13 +54,12 @@ pub fn prepare(data: &[DecompressedData], threads: usize) -> PreparedBatchHost {
 
                     let mut j = 0;
                     
-                    const PHASE: [usize; 6] = [0, 1, 1, 2, 4, 0];
-                    let mut phase = 0;
+                    let mut piece_count = 0;
                     for pc in Piece::KNIGHT..Piece::KING {
-                        phase += point.pos.piece(pc).count_ones() as usize * PHASE[pc - 2]
+                        piece_count += point.pos.piece(pc).count_ones() as usize;
                     }
 
-                    if phase <= 8 {
+                    if piece_count <= 6 {
                         continue;
                     }
 
