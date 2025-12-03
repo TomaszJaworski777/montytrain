@@ -17,8 +17,8 @@ use bullet_cuda_backend::CudaDevice;
 
 use data::MontyDataLoader;
 
-const NAME: &str = "midgame-policy";
-const HL_SIZE: usize = 4096;
+const NAME: &str = "endgame-policy";
+const HL_SIZE: usize = 1024;
 const START_SUPERBATCH: usize = 1;
 const END_SUPERBATCH: usize = 200;
 const START_LR: f32 = 0.001;

@@ -226,13 +226,13 @@ fn parse_into_buffer(game: &[u8], buffer: &mut Vec<DecompressedData>) {
                 piece_count += pos.piece(pc).count_ones() as usize;
             }
 
-            if piece_count <= 6 {
+            if piece_count > 6 {
                 for _ in 0..num_moves {
                     let _ = read_into_primitive!(reader, u8);
                 }
 
                 pos.make(best_move, &castling);
-                
+
                 continue;
             }
 
