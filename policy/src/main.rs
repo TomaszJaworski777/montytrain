@@ -17,13 +17,28 @@ use bullet_cuda_backend::CudaDevice;
 
 use data::MontyDataLoader;
 
+const NAME: &str = "midgame-policy";
+const HL_SIZE: usize = 4096;
+const START_SUPERBATCH: usize = 1;
+const END_SUPERBATCH: usize = 200;
+const START_LR: f32 = 0.001;
+const END_LR: f32 = 0.00001; 
+
+fn preamble() {
+    println!("NAME:             {NAME}");
+    println!("HL:               {HL_SIZE}");
+    println!("START_SUPERBATCH: {START_SUPERBATCH}");
+    println!("END_SUPERBATCH:   {END_SUPERBATCH}");
+    println!("HSTART_LRL:       {START_LR}");
+    println!("END_LR:           {END_LR}");
+}
+
 fn main() {
-    let hl = 1024;
     let dataloader = MontyDataLoader::new("./interleaved.bin", 96000, 8, 8);
 
     let device = CudaDevice::new(0).unwrap();
 
-    let (graph, node) = model::make(device, hl);
+    let (graph, node) = model::make(device, HL_SIZE);
 
     let params = AdamWParams { decay: 0.01, beta1: 0.9, beta2: 0.999, min_weight: -0.99, max_weight: 0.99 };
     let optimiser = Optimiser::<_, _, AdamW<_>>::new(graph, params).unwrap();
@@ -31,25 +46,23 @@ fn main() {
     let mut trainer = Trainer { optimiser, state: () };
 
     let save_rate = 10;
-    let end_superbatch = 200;
-    let initial_lr = 0.001;
-    let final_lr = 0.00001;
 
-    let steps = TrainingSteps { batch_size: 16384, batches_per_superbatch: 6104, start_superbatch: 1, end_superbatch };
+    let steps = TrainingSteps { batch_size: 16384, batches_per_superbatch: 6104, start_superbatch: START_SUPERBATCH, end_superbatch: END_SUPERBATCH };
 
     let schedule = TrainingSchedule {
         steps,
         log_rate: 64,
         lr_schedule: Box::new(|_, sb| {
-            if sb >= end_superbatch {
-                return final_lr;
+            if sb >= END_SUPERBATCH {
+                return END_LR;
             }
 
-            let lambda = sb as f32 / end_superbatch as f32;
-            initial_lr * (final_lr / initial_lr).powf(lambda)
+            let lambda = sb as f32 / END_SUPERBATCH as f32;
+            START_LR * (END_LR / START_LR).powf(lambda)
         }),
     };
 
+    preamble();
     trainer
         .train_custom(
             schedule,
@@ -58,7 +71,7 @@ fn main() {
             |trainer, superbatch| {
                 if superbatch % save_rate == 0 || superbatch == steps.end_superbatch {
                     println!("Saving Checkpoint");
-                    let dir = format!("./policy_checkpoints/policy-{superbatch}");
+                    let dir = format!("./policy_checkpoints/{NAME}-{superbatch}");
                     let _ = std::fs::create_dir(&dir);
                     trainer.optimiser.write_to_checkpoint(&dir).unwrap();
                     model::save_quantised(&trainer.optimiser.graph, &format!("{dir}/quantised.bin")).unwrap();
