@@ -20,7 +20,7 @@ use data::MontyDataLoader;
 const NAME: &str = "policy-4096";
 const HL_SIZE: usize = 4096;
 const START_SUPERBATCH: usize = 1;
-const END_SUPERBATCH: usize = 200;
+const END_SUPERBATCH: usize = 400;
 const START_LR: f32 = 0.001;
 const END_LR: f32 = 0.00001; 
 
@@ -29,7 +29,7 @@ fn preamble() {
     println!("HL:               {HL_SIZE}");
     println!("START_SUPERBATCH: {START_SUPERBATCH}");
     println!("END_SUPERBATCH:   {END_SUPERBATCH}");
-    println!("HSTART_LRL:       {START_LR}");
+    println!("START_LR:         {START_LR}");
     println!("END_LR:           {END_LR}");
 }
 
