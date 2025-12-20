@@ -1,24 +1,20 @@
 use chess::{Attacks, Piece, Side, Square};
 
-const KING_BUCKETS: [usize; 64] = [
-    3, 2, 1, 0, 0, 1, 2, 3,
-    5, 5, 4, 4, 4, 4, 5, 5,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    7, 7, 7, 7, 7, 7, 7, 7,
-    7, 7, 7, 7, 7, 7, 7, 7,
-    7, 7, 7, 7, 7, 7, 7, 7,
-    7, 7, 7, 7, 7, 7, 7, 7,
-];
+// =============================================================================
+//  ThreatsExtended
+// =============================================================================
 
 pub struct ThreatsExtended;
+
 impl ThreatsExtended {
-    pub const INPUT_SIZE: usize = ThreatsExtended::THREATS_OFFSET + 768 * 3 * 8;
+    /// Total input size matching Monty reference (ValueOffsets::END * 2 + 768)
+    pub const INPUT_SIZE: usize = ValueOffsets::END * 2 + 768 * 3;
     const THREATS_OFFSET: usize = ValueOffsets::END * 2;
 
     pub fn map_inputs<F: FnMut(usize)>(board: &chess::ChessBoard, mut process_input: F) {
         let mut board = *board;
 
+        // 1. Perspective normalization
         if board.side() == Side::BLACK {
             board.flip();
         }
@@ -29,6 +25,8 @@ impl ThreatsExtended {
 
         let occ = board.occupancy();
 
+        // 2. Build Piece Map: Maps square -> (Side * 6 + PieceType)
+        // Values: 0..5 (White P..K), 6..11 (Black P..K)
         let mut piece_map = [13usize; 64]; 
         for side in [Side::WHITE, Side::BLACK] {
             let base = 6 * usize::from(side);
@@ -41,15 +39,16 @@ impl ThreatsExtended {
         let (mut diag_stm, mut ortho_stm) = board.generate_pin_masks(Side::WHITE);
         let (mut diag_nstm, mut ortho_nstm) = board.generate_pin_masks(Side::BLACK);
 
-        let king_sq = board.king_square(Side::WHITE);
-        let bucket_idx = KING_BUCKETS[usize::from(king_sq)];
-
+        // 3. Feature Loop
         for side in [Side::WHITE, Side::BLACK] {
             let side_idx = usize::from(side);
+            // Feature Offset B (Threats): White=0, Black=ValueOffsets::END
             let side_offset = ValueOffsets::END * side_idx; 
             
+            // Feature Offset A (Existence): White=0, Black=384
             let exist_base = Self::THREATS_OFFSET + (side_idx * 384); 
 
+            // Opponent occupancy for 'enemy' check
             let enemy_occ = board.occupancy_for_side(side.flipped());
 
             for piece_idx in 0..6 {
@@ -58,11 +57,14 @@ impl ThreatsExtended {
 
                 mask.map(|src| {
                     let sq_idx = usize::from(src);
-                    let mut feat = exist_base + (piece_idx * 64) + sq_idx + (768 * 3 * bucket_idx);
+                    // A. Existence Feature
+                    let mut feat = exist_base + (piece_idx * 64) + sq_idx;
                     if diag_stm.get_bit(src) { feat += 768; }
                     if ortho_stm.get_bit(src) { feat += 768 * 2; }
                     process_input(feat);
 
+                    // B. Threat Features
+                    // We use your crate's Attacks for the move generation masked by occupancy
                     let attacks_bb = match piece {
                         Piece::PAWN => Attacks::get_pawn_attacks(src, side),
                         Piece::KNIGHT => Attacks::get_knight_attacks(src),
@@ -90,12 +92,16 @@ impl ThreatsExtended {
     }
 }
 
+// =============================================================================
+//  Logic Mapping
+// =============================================================================
+
 #[inline(always)]
 fn map_threat(
     piece: Piece,
     src: Square,
     dest: Square,
-    target: usize,
+    target: usize, // 0..11
     enemy: bool,
 ) -> Option<usize> {
     let src = usize::from(src);
@@ -114,28 +120,33 @@ fn map_threat(
 
 #[inline(always)]
 fn below(src: usize, dest: usize, table: &[u64; 64]) -> usize {
+    // Calculates the "sparse index" by counting valid moves to squares < dest
     (table[src] & ((1u64 << dest) - 1)).count_ones() as usize
 }
 
 #[inline(always)]
 fn target_is(target: usize, piece: Piece) -> bool {
+    // target is 0..11. piece is enum 0..5.
+    // Checks if the target piece type matches the 'piece' arg ignoring color.
     target % 6 == usize::from(piece)
 }
 
 fn map_pawn(src: usize, dest: usize, target: usize, enemy: bool) -> Option<usize> {
     const MAP: [usize; 12] = gen_map(&[Piece::PAWN, Piece::KNIGHT, Piece::ROOK]); 
     
+    // Monty Logic: Exclude if target isn't in map, OR if it's a forward push against an enemy pawn
     if MAP[target] == usize::MAX || (enemy && dest > src && target_is(target, Piece::PAWN)) {
         None
     } else {
         let up = usize::from(dest > src);
         let diff = dest.abs_diff(src);
+        // Identify attack direction (left/right) based on diff being 7 or 9
         let id = if diff == [9, 7][up] { 0 } else { 1 };
         let attack = 2 * (src % 8) + id - 1;
         
         let threat = ValueOffsets::PAWN 
             + MAP[target] * ValueIndices::PAWN 
-            + (src / 8 - 1) * 14
+            + (src / 8 - 1) * 14 // Rank offset
             + attack;
 
         Some(threat)
@@ -143,6 +154,7 @@ fn map_pawn(src: usize, dest: usize, target: usize, enemy: bool) -> Option<usize
 }
 
 fn map_knight(src: usize, dest: usize, target: usize) -> Option<usize> {
+    // Monty Logic: Checks specific exclusion for Knight attacking Knight forward
     if dest > src && target_is(target, Piece::KNIGHT) {
         None
     } else {
@@ -210,13 +222,17 @@ fn map_king(src: usize, dest: usize, target: usize) -> Option<usize> {
     }
 }
 
+// =============================================================================
+//  Constants & Lookup Generation
+// =============================================================================
+
 const fn gen_map(pieces: &[Piece]) -> [usize; 12] {
     let mut res = [usize::MAX; 12];
     let mut i = 0;
     while i < pieces.len() {
         let p = pieces[i].value();
-        res[p] = i;
-        res[p + 6] = i + pieces.len();
+        res[p] = i;              // White (e.g., Pawn 0 -> 0)
+        res[p + 6] = i + pieces.len(); // Black (e.g., Pawn 6 -> 0 + Len)
         i += 1;
     }
     res
@@ -256,6 +272,9 @@ const fn compute_indices(attacks: [u64; 64]) -> [usize; 65] {
     indices
 }
 
+// Tables for sparse indexing. These represent attacks on an EMPTY board.
+// We reproduce these locally to ensure the `below` function works exactly
+// like the reference code without relying on external crates for compile-time constants.
 struct PseudoAttacks;
 impl PseudoAttacks {
     const KNIGHT: [u64; 64] = {
