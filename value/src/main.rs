@@ -17,8 +17,8 @@ use bullet::{
     },
 };
 
-const HIDDEN_SIZE: usize = 2048;
-const END_SUPERBATCH: usize = 800;
+const HIDDEN_SIZE: usize = 4096;
+const END_SUPERBATCH: usize = 2000;
 
 pub const QA: i16 = 128;
 pub const QB: i16 = 1024;
