@@ -164,7 +164,7 @@ fn get_move_value(pos: &Position, mv: Move) -> i32 {
 }
 
 fn calculate_material(pos: &Position) -> i32 {
-    const PIECE_VALUES: [i32; 5] = [100, 300, 300, 500, 900];
+    const PIECE_VALUES: [i32; 7] = [0, 0, 100, 300, 300, 500, 900];
     let mut result = 0;
 
     let mut occ = pos.boys();
