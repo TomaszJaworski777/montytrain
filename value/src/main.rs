@@ -6,7 +6,7 @@ use arch::make_trainer;
 use input::ThreatInputs;
 
 use bullet::{
-    game::formats::{montyformat::chess::{Castling, Piece}, sfbinpack::chess::r#move}, nn::optimiser, trainer::{
+    game::formats::montyformat::chess::{Castling, Piece}, nn::optimiser, trainer::{
         default::{
             formats::montyformat::chess::{Move, Position},
             loader,
@@ -124,7 +124,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
     pos.map_legal_captures(castling, |mv| move_list.push(mv));
     move_list.sort_by(|a, b| get_move_value(pos, *b).cmp(&get_move_value(pos, *a)));
 
-    for (idx, mv) in move_list.iter().enumerate() {
+    for (idx, &mv) in move_list.iter().enumerate() {
         if mv == Move::NULL {
             continue;
         }
@@ -153,7 +153,7 @@ fn get_move_value(pos: &Position, mv: Move) -> i32 {
     if mv.is_capture() {
         let target_piece = pos.get_pc(1 << mv.src());
         let moving_piece = pos.get_pc(1 << mv.to());
-        result += ((target_piece.get_raw() + 1) as i32 * 100) - (moving_piece.get_raw() + 1) as i32;
+        result += ((target_piece + 1) as i32 * 100) - (moving_piece + 1) as i32;
     }
 
     if mv.is_promo() {
@@ -169,7 +169,7 @@ fn calculate_material(pos: &Position) -> i32 {
 
     let mut occ = pos.boys();
 
-    for side in 0..=1 {
+    for _ in 0..=1 {
         for piece in Piece::PAWN..=Piece::QUEEN {
             let piece_mask = pos.piece(piece) & occ;
             result += piece_mask.count_ones() as i32 * PIECE_VALUES[piece as usize];
