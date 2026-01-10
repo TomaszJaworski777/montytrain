@@ -6,19 +6,18 @@ use arch::make_trainer;
 use input::ThreatInputs;
 
 use bullet::{
-    nn::optimiser,
-    trainer::{
+    game::formats::{montyformat::chess::{Castling, Piece}, sfbinpack::chess::r#move}, nn::optimiser, trainer::{
         default::{
             formats::montyformat::chess::{Move, Position},
             loader,
         },
-        schedule::{lr, wdl, TrainingSchedule, TrainingSteps},
+        schedule::{TrainingSchedule, TrainingSteps, lr, wdl},
         settings::LocalSettings,
-    },
+    }
 };
 
-const HIDDEN_SIZE: usize = 3072;
-const END_SUPERBATCH: usize = 2000;
+const HIDDEN_SIZE: usize = 4096;
+const END_SUPERBATCH: usize = 25;
 
 pub const QA: i16 = 128;
 pub const QB: i16 = 1024;
@@ -37,11 +36,11 @@ fn main() {
         },
         wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
         lr_scheduler: lr::ExponentialDecayLR {
-            initial_lr: 0.001,
-            final_lr: 0.0000001,
+            initial_lr: /*0.001,*/ 0.00000001,
+            final_lr: /*0.0000001,*/ 0.0000000005,
             final_superbatch: END_SUPERBATCH,
         },
-        save_rate: 50,
+        save_rate: 5,
     };
 
     let optimiser_params = optimiser::AdamWParams {
@@ -61,8 +60,11 @@ fn main() {
         batch_queue_size: 32,
     };
 
-    fn filter(_: &Position, _: Move, _: i16, _: f32) -> bool {
-        true
+    fn filter(pos: &Position, _: Move, _: i16, result: f32) -> bool {
+        let fen = pos.as_fen();
+        let mut castling = Castling::default();
+        castling.parse(pos, &fen);
+        result > 0.9 && qsearch(pos, &castling, -30000, 30000, 0) < -300
     }
 
     let data_loader = loader::MontyBinpackLoader::new(
@@ -72,6 +74,7 @@ fn main() {
         filter,
     );
 
+    trainer.load_from_checkpoint("value_checkpoints/MontyThreats-4000");
     trainer.run(&schedule, &settings, &data_loader);
 
     for fen in [
@@ -100,4 +103,80 @@ fn main() {
             _ => panic!("Invalid output size!"),
         }
     }
+}
+
+fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8) -> i32 {
+    let eval = calculate_material(pos);
+
+    if depth > 6 {
+        return eval;
+    }
+
+    if eval >= beta {
+        return beta;
+    }
+
+    if eval > alpha {
+        alpha = eval;
+    }
+
+    let mut move_list = Vec::new();
+    pos.map_legal_captures(castling, |mv| move_list.push(mv));
+    move_list.sort_by(|a, b| get_move_value(pos, *b).cmp(&get_move_value(pos, *a)));
+
+    for (idx, mv) in move_list.iter().enumerate() {
+        if mv == Move::NULL {
+            continue;
+        }
+
+        let mut pos_cpy = pos.clone();
+        pos_cpy.make(*mv, castling);
+
+        let score = -qsearch(pos, castling, -beta, -alpha, depth + 1);
+
+        if score >= beta {
+            return beta;
+        }
+
+        if score > alpha {
+            alpha = score;
+        }
+    }
+
+    alpha
+}
+
+#[inline]
+fn get_move_value(pos: &Position, mv: Move) -> i32 {
+    let mut result: i32 = 0;
+
+    if mv.is_capture() {
+        let target_piece = pos.get_pc(1 << mv.src());
+        let moving_piece = pos.get_pc(1 << mv.to());
+        result += ((target_piece.get_raw() + 1) as i32 * 100) - (moving_piece.get_raw() + 1) as i32;
+    }
+
+    if mv.is_promo() {
+        result += ((mv.promo_pc() + 1) as i32) * 100;
+    }
+
+    return result;
+}
+
+fn calculate_material(pos: &Position) -> i32 {
+    const PIECE_VALUES: [i32; 5] = [100, 300, 300, 500, 900];
+    let mut result = 0;
+
+    let mut occ = pos.boys();
+
+    for side in 0..=1 {
+        for piece in Piece::PAWN..=Piece::QUEEN {
+            let piece_mask = pos.piece(piece) & occ;
+            result += piece_mask.count_ones() as i32 * PIECE_VALUES[piece as usize];
+        }
+        result = -result;
+        occ = pos.opps();
+    }
+
+    result
 }
