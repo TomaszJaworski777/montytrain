@@ -36,8 +36,8 @@ fn main() {
         },
         wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
         lr_scheduler: lr::ExponentialDecayLR {
-            initial_lr: /*0.001,*/ 0.00000001,
-            final_lr: /*0.0000001,*/ 0.0000000005,
+            initial_lr: /*0.001,*/ 0.0000005,
+            final_lr: /*0.0000001,*/ 0.000000005,
             final_superbatch: END_SUPERBATCH,
         },
         save_rate: 5,
@@ -108,7 +108,7 @@ fn main() {
 fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8) -> i32 {
     let eval = calculate_material(pos);
 
-    if depth > 2 {
+    if depth > 4 {
         return eval;
     }
 
