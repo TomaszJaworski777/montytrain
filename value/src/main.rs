@@ -130,7 +130,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
         }
 
         let mut pos_cpy = pos.clone();
-        pos_cpy.make(*mv, castling);
+        pos_cpy.make(mv, castling);
 
         let score = -qsearch(pos, castling, -beta, -alpha, depth + 1);
 
