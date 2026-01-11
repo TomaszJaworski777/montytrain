@@ -27,7 +27,7 @@ pub const QB: i16 = 1024;
 fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
-    let size = 256 * 1024 * 1024 / std::mem::size_of::<ChessBoard>() / 2;
+    let size = 8192 * 1024 * 1024 / std::mem::size_of::<ChessBoard>() / 2;
 
     let schedule = TrainingSchedule {
         net_id: format!("MontyThreatsFT2-{size}"),
@@ -77,8 +77,6 @@ fn main() {
             return false;
         }
 
-        let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
-
         let mut castling = Castling::default();
         let qs_score = qsearch(pos, &castling, -30000, 30000, 0);
 
@@ -99,8 +97,8 @@ fn main() {
 
     let data_loader = loader::MontyBinpackLoader::new(
         "./interleaved-value.bin",
-        256,
-        1,
+        8192,
+        4,
         filter,
     );
 
@@ -150,19 +148,30 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
         }
     }
 
-    if depth > 1 {
+    if depth > 2 {
         return if in_check { alpha } else { calculate_material(pos) };
     }
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
-        if in_check || mv.is_capture() || mv.is_promo() || mv_is_check(mv, pos, castling) {
-            move_list.push(mv)
+        if depth == 0 && (mv.is_promo() || mv_is_check(mv, pos, castling)) {
+            move_list.push((mv, get_move_value(pos, mv)));
+            return;
+        }
+
+        if depth == 1 && in_check {
+            move_list.push((mv, get_move_value(pos, mv)));
+            return;
+        }
+
+        if mv.is_capture() {
+            move_list.push((mv, get_move_value(pos, mv)))
         }
     });
-    move_list.sort_by(|a, b| get_move_value(pos, *b).cmp(&get_move_value(pos, *a)));
 
-    for (idx, &mv) in move_list.iter().enumerate() {
+    move_list.sort_by(|(_, a), (_, b)| b.cmp(&a));
+
+    for (idx, &(mv, _)) in move_list.iter().enumerate() {
         if mv == Move::NULL {
             continue;
         }
@@ -201,24 +210,28 @@ fn get_move_value(pos: &Position, mv: Move) -> i32 {
     return result;
 }
 
+#[inline]
 fn calculate_material(pos: &Position) -> i32 {
-    const PIECE_VALUES: [i32; 7] = [0, 0, 100, 300, 300, 500, 900];
-    let mut result = 0;
+    let stm = pos.boys(); 
+    let nstm = pos.opps();
 
-    let mut occ = pos.boys();
+    let mut score = 0;
+    score += (pos.piece(Piece::PAWN) & stm).count_ones() as i32 * 100;
+    score += (pos.piece(Piece::KNIGHT) & stm).count_ones() as i32 * 300;
+    score += (pos.piece(Piece::BISHOP) & stm).count_ones() as i32 * 300;
+    score += (pos.piece(Piece::ROOK) & stm).count_ones() as i32 * 500;
+    score += (pos.piece(Piece::QUEEN) & stm).count_ones() as i32 * 900;
 
-    for _ in 0..=1 {
-        for piece in Piece::PAWN..=Piece::QUEEN {
-            let piece_mask = pos.piece(piece) & occ;
-            result += piece_mask.count_ones() as i32 * PIECE_VALUES[piece as usize];
-        }
-        result = -result;
-        occ = pos.opps();
-    }
+    score -= (pos.piece(Piece::PAWN) & nstm).count_ones() as i32 * 100;
+    score -= (pos.piece(Piece::KNIGHT) & nstm).count_ones() as i32 * 300;
+    score -= (pos.piece(Piece::BISHOP) & nstm).count_ones() as i32 * 300;
+    score -= (pos.piece(Piece::ROOK) & nstm).count_ones() as i32 * 500;
+    score -= (pos.piece(Piece::QUEEN) & nstm).count_ones() as i32 * 900;
 
-    result
+    score
 }
 
+#[inline]
 fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
     let mut pos_clone = pos.clone();
     pos_clone.make(mv, castling);
