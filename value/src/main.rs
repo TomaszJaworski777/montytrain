@@ -61,7 +61,11 @@ fn main() {
     };
 
     fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
-        if pos.piece(Piece::QUEEN).count_ones() > 2 {
+        if pos.piece(Piece::QUEEN).count_ones() > 2 
+            || pos.piece(Piece::ROOK).count_ones() > 5 
+            || pos.piece(Piece::KNIGHT).count_ones() > 5 
+            || pos.piece(Piece::BISHOP).count_ones() > 5 
+        {
             return false;
         }
 
@@ -71,8 +75,8 @@ fn main() {
 
         let qs_score = qsearch(pos, &castling, -30000, 30000, 0);
 
-        let white_sac = pos.stm() == 0 && result > 0.9 && qs_score < -300;
-        let black_sac = pos.stm() == 1 && result < 0.1 && qs_score < -300;
+        let white_sac = pos.stm() == 0 && result > 0.9 && qs_score < -300 && qs_score > -30000;
+        let black_sac = pos.stm() == 1 && result < 0.1 && qs_score < -300 && qs_score > -30000;
 
         let filter = white_sac || black_sac;
 
@@ -209,6 +213,7 @@ fn calculate_material(pos: &Position) -> i32 {
 }
 
 fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
+    return true;
     let mut pos_clone = pos.clone();
     pos_clone.make(mv, castling);
     pos_clone.in_check()
