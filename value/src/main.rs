@@ -82,7 +82,7 @@ fn main() {
 
         let filter = white_sac || black_sac;
 
-        if filter && pos.get_pc(1 << mv.src()) != Piece::PAWN {
+        if filter {
             println!("passed with result {result}, qsearch {}: {}", qs_score, fen)
         } 
         // else {
