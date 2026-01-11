@@ -147,7 +147,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
         }
     }
 
-    if depth > 8 {
+    if depth > 8 || pos.piece(Piece::KING).count_ones() != 2 {
         return if in_check { alpha } else { calculate_material(pos) };
     }
 
