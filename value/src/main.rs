@@ -61,15 +61,6 @@ fn main() {
     };
 
     fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
-        if pos.piece(Piece::KING).count_ones() != 2 {
-            return false;
-        }
-
-        let opp_king_sq = (pos.piece(Piece::KING) & pos.opps()).trailing_zeros() as usize;
-        if pos.is_square_attacked(opp_king_sq, 1 - pos.stm(), pos.occ()) {
-            return false;
-        }
-
         if pos.piece(Piece::QUEEN).count_ones() > 2 
             || pos.piece(Piece::ROOK).count_ones() > 5 
             || pos.piece(Piece::KNIGHT).count_ones() > 5 
@@ -152,7 +143,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
         }
     }
 
-    if depth > 8 || pos.piece(Piece::KING).count_ones() != 2 {
+    if depth > 8 {
         return if in_check { alpha } else { calculate_material(pos) };
     }
 
@@ -225,6 +216,10 @@ fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
     let mut pos_clone = pos.clone();
     if mv == Move::NULL {
         return false;
+    }
+
+    if pos_clone.piece(Piece::KING).count_ones() != 2 {
+        println!("NOT TWO KINGS");
     }
 
     pos_clone.make(mv, castling);
