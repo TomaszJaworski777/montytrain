@@ -65,6 +65,11 @@ fn main() {
             return false;
         }
 
+        let opp_king_sq = (pos.piece(Piece::KING) & pos.opps()).trailing_zeros() as usize;
+        if pos.is_square_attacked(opp_king_sq, 1 - pos.stm(), pos.occ()) {
+            return false;
+        }
+
         if pos.piece(Piece::QUEEN).count_ones() > 2 
             || pos.piece(Piece::ROOK).count_ones() > 5 
             || pos.piece(Piece::KNIGHT).count_ones() > 5 
