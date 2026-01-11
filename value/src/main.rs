@@ -27,7 +27,7 @@ pub const QB: i16 = 1024;
 fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
-    let size = 2 * 1024 * 1024 / std::mem::size_of::<ChessBoard>() / 2;
+    let size = 256 * 1024 * 1024 / std::mem::size_of::<ChessBoard>() / 2;
 
     let schedule = TrainingSchedule {
         net_id: format!("MontyThreatsFT2-{size}"),
