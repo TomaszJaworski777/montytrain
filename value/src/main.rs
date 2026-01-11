@@ -61,6 +61,8 @@ fn main() {
     };
 
     fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
+        let pos = &Position::from_raw(pos.bbs(), bool::from(pos.stm()), pos.enp_sq(), 0, pos.halfm(), pos.fullm());
+
         if pos.piece(Piece::QUEEN).count_ones() > 2 
             || pos.piece(Piece::ROOK).count_ones() > 5 
             || pos.piece(Piece::KNIGHT).count_ones() > 5 
@@ -214,16 +216,6 @@ fn calculate_material(pos: &Position) -> i32 {
 
 fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
     let mut pos_clone = pos.clone();
-    if mv == Move::NULL {
-        return false;
-    }
-
     pos_clone.make(mv, castling);
-
-    let king = (pos_clone.piece(Piece::KING) & pos_clone.boys()).trailing_zeros();
-    if king >= 64 {
-        return false;
-    }
-
     pos_clone.in_check()
 }
