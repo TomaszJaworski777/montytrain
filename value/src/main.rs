@@ -122,7 +122,7 @@ fn main() {
 fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8) -> i32 {
     let eval = calculate_material(pos);
 
-    if depth > 1 {
+    if depth > 2 {
         return eval;
     }
 
