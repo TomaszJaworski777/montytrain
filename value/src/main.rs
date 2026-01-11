@@ -68,11 +68,16 @@ fn main() {
         let fen = pos.as_fen();
         let mut castling = Castling::default();
         castling.parse(pos, &fen);
-        let filter = (pos.stm() == 0 && result > 0.9 && qsearch(pos, &castling, -30000, 30000, 0) < -300) 
-            || (pos.stm() == 1 && result < 0.1 && -qsearch(pos, &castling, -30000, 30000, 0) < -300);
+
+        let qs_score = qsearch(pos, &castling, -30000, 30000, 0);
+
+        let white_sac = pos.stm() == 0 && result > 0.9 && qs_score < -300;
+        let black_sac = pos.stm() == 1 && result < 0.1 && qs_score < -300;
+
+        let filter = white_sac || black_sac;
 
         if filter && pos.get_pc(1 << mv.src()) != Piece::PAWN {
-            println!("passed with result {result}, qsearch {}: {}", -qsearch(pos, &castling, -30000, 30000, 0), fen)
+            println!("passed with result {result}, qsearch {}: {}", qs_score, fen)
         } 
         // else {
         //     println!("not passed {}, result: {}", pos.as_fen(), result)
