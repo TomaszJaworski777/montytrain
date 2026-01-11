@@ -8,7 +8,7 @@ use arch::make_trainer;
 use input::ThreatInputs;
 
 use bullet::{
-    game::formats::montyformat::chess::{Attacks, Castling, Piece}, nn::optimiser, trainer::{
+    game::formats::{bulletformat::ChessBoard, montyformat::chess::{Attacks, Castling, Piece}}, nn::optimiser, trainer::{
         default::{
             formats::montyformat::chess::{Move, Position},
             loader,
@@ -27,8 +27,10 @@ pub const QB: i16 = 1024;
 fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
+    let size = 256 * 1024 * 1024 / std::mem::size_of::<ChessBoard>() / 2;
+
     let schedule = TrainingSchedule {
-        net_id: "MontyThreatsFT2".to_string(),
+        net_id: format!("MontyThreatsFT2-{size}"),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 65_536,
