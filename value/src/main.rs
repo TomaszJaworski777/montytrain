@@ -79,10 +79,7 @@ fn main() {
 
         let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
-        let fen = pos.as_fen();
         let mut castling = Castling::default();
-        castling.parse(pos, &fen);
-
         let qs_score = qsearch(pos, &castling, -30000, 30000, 0);
 
         let white_sac = pos.stm() == 0 && result > 0.9 && qs_score < -300 && qs_score > -2000;
@@ -102,7 +99,7 @@ fn main() {
 
     let data_loader = loader::MontyBinpackLoader::new(
         "./interleaved-value.bin",
-        2,
+        256,
         1,
         filter,
     );
@@ -153,7 +150,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
         }
     }
 
-    if depth > 2 {
+    if depth > 1 {
         return if in_check { alpha } else { calculate_material(pos) };
     }
 
