@@ -136,9 +136,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
-        if mv.is_capture() || mv.is_promo() || mv_is_check(mv, pos, castling) || pos.in_check() {
-            move_list.push(mv)
-        }
+        move_list.push(mv)
     });
     move_list.sort_by(|a, b| get_move_value(pos, *b).cmp(&get_move_value(pos, *a)));
 
