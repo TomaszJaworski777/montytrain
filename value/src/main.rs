@@ -145,7 +145,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
         }
     }
 
-    if depth > 4 {
+    if depth > 2 {
         return if in_check { alpha } else { calculate_material(pos) };
     }
 
