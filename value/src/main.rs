@@ -216,7 +216,7 @@ fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
     let mut pos_clone = pos.clone();
     pos_clone.make(mv, castling);
 
-    let king = (pos_clone.piece(Piece::KING) & self.boys()).trailing_zeros();
+    let king = (pos_clone.piece(Piece::KING) & pos_clone.boys()).trailing_zeros();
     if king >= 64 {
         return false;
     }
