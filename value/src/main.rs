@@ -149,7 +149,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
-        if in_check || mv.is_capture() || mv.is_promo() {
+        if in_check || mv.is_capture() || mv.is_promo() || mv_is_check(mv, pos, castling) {
             move_list.push(mv)
         }
     });
@@ -214,12 +214,10 @@ fn calculate_material(pos: &Position) -> i32 {
 
 fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
     let mut pos_clone = pos.clone();
-    pos_clone.make(mv, castling);
-
-    let king = (pos_clone.piece(Piece::KING) & pos_clone.boys()).trailing_zeros();
-    if king >= 64 {
+    if mv == Move::NULL {
         return false;
     }
-
+    
+    pos_clone.make(mv, castling);
     pos_clone.in_check()
 }
