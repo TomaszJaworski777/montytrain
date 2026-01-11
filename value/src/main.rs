@@ -27,10 +27,8 @@ pub const QB: i16 = 1024;
 fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
-    let size = 8192 * 1024 * 1024 / std::mem::size_of::<ChessBoard>() / 2;
-
     let schedule = TrainingSchedule {
-        net_id: format!("MontyThreatsFT2-{size}"),
+        net_id: format!("MontyThreatsFT2_noqsearch"),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 65_536,
@@ -99,7 +97,7 @@ fn main() {
 
     let data_loader = loader::MontyBinpackLoader::new(
         "./interleaved-value.bin",
-        8192,
+        32000,
         4,
         filter,
     );
