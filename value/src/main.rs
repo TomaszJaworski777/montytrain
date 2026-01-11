@@ -122,7 +122,7 @@ fn main() {
 fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8) -> i32 {
     let eval = calculate_material(pos);
 
-    if depth > 4 {
+    if depth > 1 {
         return eval;
     }
 
@@ -136,7 +136,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
-        if mv.is_capture() || mv.is_promo() || pos.in_check() {
+        if mv.is_capture() || mv.is_promo() || mv_is_check(mv, pos, castling) || pos.in_check() {
             move_list.push(mv)
         }
     });
