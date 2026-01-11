@@ -226,9 +226,7 @@ fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
 
     let king = (pos_clone.piece(Piece::KING) & pos_clone.boys()).trailing_zeros();
     if king >= 64 {
-        println!("{mv} -> {}", pos_clone.as_fen());
-        println!("{:#b}", pos_clone.piece(Piece::KING));
-        println!("{}", pos.coloured_board(&[0; 64], &[0.0; 64]));
+        return false;
     }
 
     pos_clone.in_check()
