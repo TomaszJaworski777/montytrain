@@ -70,7 +70,7 @@ fn main() {
         if filter {
             println!("passed {}", pos.as_fen())
         } else {
-            println!("not passed {}, result: {}", pos.as_fen())
+            println!("not passed {}, result: {}", pos.as_fen(), result)
         }
 
         filter
