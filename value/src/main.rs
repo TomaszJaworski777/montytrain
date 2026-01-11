@@ -68,8 +68,8 @@ fn main() {
         let fen = pos.as_fen();
         let mut castling = Castling::default();
         castling.parse(pos, &fen);
-        let filter = (pos.stm() == 0 && result > 0.9 && qsearch(pos, &castling, -30000, 30000, 0, false) < -300) 
-            || (pos.stm() == 1 && result < 0.1 && -qsearch(pos, &castling, -30000, 30000, 0, false) > 300);
+        let filter = (pos.stm() == 0 && result > 0.9 && qsearch(pos, &castling, -30000, 30000, 0) < -300) 
+            || (pos.stm() == 1 && result < 0.1 && -qsearch(pos, &castling, -30000, 30000, 0) > 300);
 
         if filter {
             println!("passed with result {result}: {}", fen)
@@ -119,10 +119,10 @@ fn main() {
     }
 }
 
-fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8, is_mv_check: bool) -> i32 {
+fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8) -> i32 {
     let eval = calculate_material(pos);
 
-    if depth > if is_mv_check { 2 } else { 4 } {
+    if depth > 4 {
         return eval;
     }
 
@@ -136,7 +136,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
-        if mv.is_capture() || mv.is_promo() || mv_is_check(mv, pos, castling) || pos.in_check() {
+        if mv.is_capture() || mv.is_promo() || pos.in_check() {
             move_list.push(mv)
         }
     });
@@ -150,7 +150,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
         let mut pos_cpy = pos.clone();
         pos_cpy.make(mv, castling);
 
-        let score = -qsearch(pos, castling, -beta, -alpha, depth + 1, mv_is_check(mv, pos, castling));
+        let score = -qsearch(pos, castling, -beta, -alpha, depth + 1);
 
         if score >= beta {
             return beta;
