@@ -218,10 +218,6 @@ fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
         return false;
     }
 
-    if pos_clone.piece(Piece::KING).count_ones() != 2 {
-        println!("NOT TWO KINGS");
-    }
-
     pos_clone.make(mv, castling);
 
     let king = (pos_clone.piece(Piece::KING) & pos_clone.boys()).trailing_zeros();
