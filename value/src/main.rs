@@ -26,7 +26,7 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: "MontyThreats".to_string(),
+        net_id: "MontyThreatsFT".to_string(),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 65_536,
@@ -82,9 +82,9 @@ fn main() {
 
         let filter = white_sac || black_sac;
 
-        if filter {
-            println!("passed with result {result}, qsearch {}: {}", qs_score, fen)
-        } 
+        // if filter {
+        //     println!("passed with result {result}, qsearch {}: {}", qs_score, fen)
+        // } 
         // else {
         //     println!("not passed {}, result: {}", pos.as_fen(), result)
         // }
