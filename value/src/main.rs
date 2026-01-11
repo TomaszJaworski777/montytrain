@@ -2,6 +2,8 @@ mod arch;
 mod input;
 mod threads_extended;
 
+use std::sync::atomic::{AtomicI32, AtomicU64, Ordering};
+
 use arch::make_trainer;
 use input::ThreatInputs;
 
@@ -60,6 +62,8 @@ fn main() {
         batch_queue_size: 32,
     };
 
+    let count = AtomicU64::new(0);
+
     fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
         let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
@@ -89,6 +93,15 @@ fn main() {
         //     println!("not passed {}, result: {}", pos.as_fen(), result)
         // }
 
+        if filter {
+            count.fetch_add(1, Ordering::Relaxed);
+
+            if count.load(Ordering::Relaxed) > 10000 {
+                count.store(0, Ordering::Relaxed);
+                println!("10k");
+            }
+        }
+        
         filter
     }
 
