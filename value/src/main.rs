@@ -72,7 +72,7 @@ fn main() {
             || (pos.stm() == 1 && result < 0.1 && qsearch(pos, &castling, -30000, 30000, 0) < -300);
 
         if filter && pos.get_pc(1 << mv.src()) != Piece::PAWN {
-            println!("passed with result {result}: {}", fen)
+            println!("passed with result {result}, qsearch {}: {}", qsearch(pos, &castling, -30000, 30000, 0), fen)
         } 
         // else {
         //     println!("not passed {}, result: {}", pos.as_fen(), result)
