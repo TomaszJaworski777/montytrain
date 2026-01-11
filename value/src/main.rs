@@ -65,12 +65,6 @@ fn main() {
     };
 
     fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
-        if calculate_material(pos) > -300 {
-            return false;
-        }
-
-        let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
-
         if pos.piece(Piece::QUEEN).count_ones() > 2 
             || pos.piece(Piece::ROOK).count_ones() > 5 
             || pos.piece(Piece::KNIGHT).count_ones() > 5 
@@ -78,6 +72,12 @@ fn main() {
         {
             return false;
         }
+
+        if calculate_material(pos) > -300 {
+            return false;
+        }
+
+        let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
         let fen = pos.as_fen();
         let mut castling = Castling::default();
