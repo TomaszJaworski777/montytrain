@@ -75,10 +75,10 @@ fn main() {
             return false;
         }
 
-        // let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
+        let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
-        // let mut castling = Castling::default();
-        let qs_score = -500; //qsearch(pos, &castling, -30000, 30000, 0);
+        let mut castling = Castling::default();
+        let qs_score = qsearch(pos, &castling, -30000, 30000, 0);
 
         let white_sac = pos.stm() == 0 && result > 0.9 && qs_score < -300 && qs_score > -2000;
         let black_sac = pos.stm() == 1 && result < 0.1 && qs_score < -300 && qs_score > -2000;
