@@ -64,12 +64,13 @@ fn main() {
         let fen = pos.as_fen();
         let mut castling = Castling::default();
         castling.parse(pos, &fen);
-        let filter = pos.stm() == 0 && result > 0.9 && qsearch(pos, &castling, -30000, 30000, 0) < -300;
+        let filter = (pos.stm() == 0 && result > 0.9 && qsearch(pos, &castling, -30000, 30000, 0) < -300) 
+            || (pos.stm() == 1 && result < 0.1 && -qsearch(pos, &castling, -30000, 30000, 0) < -300);
 
         if filter {
             println!("passed {}", pos.as_fen())
         } else {
-            println!("not passed {}", pos.as_fen())
+            println!("not passed {}, result: {}", pos.as_fen())
         }
 
         filter
