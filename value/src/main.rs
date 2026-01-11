@@ -150,7 +150,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
         let mut pos_cpy = pos.clone();
         pos_cpy.make(mv, castling);
 
-        let score = -qsearch(pos, castling, -beta, -alpha, depth + 1);
+        let score = -qsearch(&pos_cpy, castling, -beta, -alpha, depth + 1);
 
         if score >= beta {
             return beta;
@@ -169,8 +169,8 @@ fn get_move_value(pos: &Position, mv: Move) -> i32 {
     let mut result: i32 = 0;
 
     if mv.is_capture() {
-        let target_piece = pos.get_pc(1 << mv.src());
-        let moving_piece = pos.get_pc(1 << mv.to());
+        let moving_piece = pos.get_pc(1 << mv.src());
+        let target_piece = pos.get_pc(1 << mv.to());
         result += ((target_piece + 1) as i32 * 100) - (moving_piece + 1) as i32;
     }
 
@@ -196,11 +196,10 @@ fn calculate_material(pos: &Position) -> i32 {
         occ = pos.opps();
     }
 
-    result
+    result * if pos.stm() == 0 { 1 } else { -1 }
 }
 
 fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
-    let moving_piece = pos.get_pc(1 << mv.src());
     let mut pos_clone = pos.clone();
     pos_clone.make(mv, castling);
     pos_clone.in_check()
