@@ -60,7 +60,7 @@ fn main() {
         batch_queue_size: 32,
     };
 
-    fn filter(pos: &Position, _: Move, _: i16, result: f32) -> bool {
+    fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
         if pos.piece(Piece::QUEEN).count_ones() > 2 {
             return false;
         }
@@ -71,7 +71,7 @@ fn main() {
         let filter = (pos.stm() == 0 && result > 0.9 && qsearch(pos, &castling, -30000, 30000, 0) < -300) 
             || (pos.stm() == 1 && result < 0.1 && -qsearch(pos, &castling, -30000, 30000, 0) > 300);
 
-        if filter {
+        if filter && pos.get_pc(1 << mv.src()) != Piece::PAWN {
             println!("passed with result {result}: {}", fen)
         } 
         // else {
