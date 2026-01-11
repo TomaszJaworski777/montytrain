@@ -61,7 +61,7 @@ fn main() {
     };
 
     fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
-        let pos = &Position::from_raw(pos.bbs(), bool::from(pos.stm()), pos.enp_sq(), 0, pos.halfm(), pos.fullm());
+        let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
         if pos.piece(Piece::QUEEN).count_ones() > 2 
             || pos.piece(Piece::ROOK).count_ones() > 5 
