@@ -96,8 +96,8 @@ fn main() {
 
     let data_loader = loader::MontyBinpackLoader::new(
         "./interleaved-value.bin",
-        4086,
-        4,
+        256,
+        1,
         filter,
     );
 
