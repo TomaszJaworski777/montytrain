@@ -213,7 +213,7 @@ fn calculate_material(pos: &Position) -> i32 {
 }
 
 fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
-    return true;
+    return false;
     let mut pos_clone = pos.clone();
     pos_clone.make(mv, castling);
     pos_clone.in_check()
