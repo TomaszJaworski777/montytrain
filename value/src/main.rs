@@ -149,7 +149,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
-        if in_check || mv.is_capture() || mv.is_promo() || mv_is_check(mv, pos, castling) {
+        if in_check || mv.is_capture() || mv.is_promo() {
             move_list.push(mv)
         }
     });
