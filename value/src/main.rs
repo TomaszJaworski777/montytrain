@@ -68,7 +68,7 @@ fn main() {
             || (pos.stm() == 1 && result < 0.1 && -qsearch(pos, &castling, -30000, 30000, 0) > 300);
 
         if filter {
-            println!("passed {}", pos.as_fen())
+            println!("passed with result {result}: {}", pos.as_fen())
         } 
         // else {
         //     println!("not passed {}, result: {}", pos.as_fen(), result)
