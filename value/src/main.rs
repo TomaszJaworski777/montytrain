@@ -6,7 +6,7 @@ use arch::make_trainer;
 use input::ThreatInputs;
 
 use bullet::{
-    game::formats::montyformat::chess::{Castling, Piece}, nn::optimiser, trainer::{
+    game::formats::montyformat::chess::{Attacks, Castling, Piece}, nn::optimiser, trainer::{
         default::{
             formats::montyformat::chess::{Move, Position},
             loader,
@@ -131,7 +131,11 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
     }
 
     let mut move_list = Vec::new();
-    pos.map_legal_captures(castling, |mv| move_list.push(mv));
+    pos.map_legal_moves(castling, |mv| {
+        if mv.is_capture() || mv.is_promo() || mv_is_check(mv, pos, castling) {
+            move_list.push(mv)
+        }
+    });
     move_list.sort_by(|a, b| get_move_value(pos, *b).cmp(&get_move_value(pos, *a)));
 
     for (idx, &mv) in move_list.iter().enumerate() {
@@ -189,4 +193,11 @@ fn calculate_material(pos: &Position) -> i32 {
     }
 
     result
+}
+
+fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
+    let moving_piece = pos.get_pc(1 << mv.src());
+    let mut pos_clone = pos.clone();
+    pos_clone.make(mv, castling);
+    pos_clone.in_check()
 }
