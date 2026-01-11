@@ -201,7 +201,7 @@ fn calculate_material(pos: &Position) -> i32 {
         occ = pos.opps();
     }
 
-    result * if pos.stm() == 0 { 1 } else { -1 }
+    result
 }
 
 fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
