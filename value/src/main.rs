@@ -65,6 +65,10 @@ fn main() {
     };
 
     fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
+        if calculate_material(pos) > -300 {
+            return false;
+        }
+
         let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
         if pos.piece(Piece::QUEEN).count_ones() > 2 
