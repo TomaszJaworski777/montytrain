@@ -77,6 +77,8 @@ fn main() {
             return false;
         }
 
+        let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
+
         let mut castling = Castling::default();
         let qs_score = qsearch(pos, &castling, -30000, 30000, 0);
 
