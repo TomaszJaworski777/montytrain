@@ -75,10 +75,6 @@ fn main() -> std::io::Result<()> {
                             return false;
                         }
 
-                        if calculate_material(pos) > -300 {
-                            return false;
-                        }
-
                         let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
                         let mut castling = Castling::default();
@@ -87,7 +83,10 @@ fn main() -> std::io::Result<()> {
                         let white_sac = pos.stm() == 0 && result > 0.9 && qs_score < -300 && qs_score > -2000;
                         let black_sac = pos.stm() == 1 && result < 0.1 && qs_score < -300 && qs_score > -2000;
 
-                        let filter = white_sac || black_sac;
+                        let n_white_sac = pos.stm() == 0 && result < 0.1 && qs_score < -300;
+                        let n_black_sac = pos.stm() == 1 && result > 0.9 && qs_score < -300;
+
+                        let filter = white_sac || black_sac || n_white_sac || n_black_sac;
 
                         // if filter {
                         //     println!("passed with result {result}, qsearch {}: {}", qs_score, fen)
