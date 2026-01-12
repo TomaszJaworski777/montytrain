@@ -62,15 +62,11 @@ fn main() {
         batch_queue_size: 32,
     };
 
-    fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
-        true
-    }
-
     let data_loader = loader::SfBinpackLoader::new(
         "./finetune-value.bin",
         32000,
         4,
-        filter,
+        |_| true,
     );
 
     trainer.load_from_checkpoint("value_checkpoints/MontyThreats-4000");
