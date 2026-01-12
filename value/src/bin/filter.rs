@@ -75,18 +75,16 @@ fn main() -> std::io::Result<()> {
                             return false;
                         }
 
-                        if result == 0.5 && calculate_material(pos).abs() >= 200 {
-                            return true;
-                        }
-
                         let filter = |pos: &Position, result: f32, material: i32| -> bool {
+                            let draw = result == 0.5 && material.abs() > 300;
+
                             let white_sac = pos.stm() == 0 && result > 0.9 && material < -300 && material > -2000;
                             let black_sac = pos.stm() == 1 && result < 0.1 && material < -300 && material > -2000;
 
                             let n_white_sac = pos.stm() == 0 && result < 0.1 && material > 300;
                             let n_black_sac = pos.stm() == 1 && result > 0.9 && material > 300;
 
-                            white_sac || black_sac || n_white_sac || n_black_sac
+                            draw || white_sac || black_sac || n_white_sac || n_black_sac
                         };
 
                         if !filter(pos, result, calculate_material(pos)) {
