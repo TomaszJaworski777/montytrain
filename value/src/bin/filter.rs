@@ -5,6 +5,7 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
+use bullet::game::formats::montyformat::chess::{Castling, Piece};
 // IMPORTS: Adjust these paths to match your actual crate structure
 use bullet::{
     game::formats::montyformat::{
