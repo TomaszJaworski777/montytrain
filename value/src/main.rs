@@ -28,7 +28,7 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: format!("MontyThreatsFT2_noqsearch"),
+        net_id: format!("MontyThreatsFT3"),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 65_536,
@@ -63,40 +63,11 @@ fn main() {
     };
 
     fn filter(pos: &Position, mv: Move, _: i16, result: f32) -> bool {
-        if pos.piece(Piece::QUEEN).count_ones() > 2 
-            || pos.piece(Piece::ROOK).count_ones() > 5 
-            || pos.piece(Piece::KNIGHT).count_ones() > 5 
-            || pos.piece(Piece::BISHOP).count_ones() > 5 
-        {
-            return false;
-        }
-
-        if calculate_material(pos) > -300 {
-            return false;
-        }
-
-        let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
-
-        let mut castling = Castling::default();
-        let qs_score = qsearch(pos, &castling, -30000, 30000, 0);
-
-        let white_sac = pos.stm() == 0 && result > 0.9 && qs_score < -300 && qs_score > -2000;
-        let black_sac = pos.stm() == 1 && result < 0.1 && qs_score < -300 && qs_score > -2000;
-
-        let filter = white_sac || black_sac;
-
-        // if filter {
-        //     println!("passed with result {result}, qsearch {}: {}", qs_score, fen)
-        // } 
-        // else {
-        //     println!("not passed {}, result: {}", pos.as_fen(), result)
-        // }
-
-        filter
+        true
     }
 
-    let data_loader = loader::MontyBinpackLoader::new(
-        "./interleaved-value.bin",
+    let data_loader = loader::SfBinpackLoader::new(
+        "./finetune-value.bin",
         32000,
         4,
         filter,
