@@ -75,6 +75,10 @@ fn main() -> std::io::Result<()> {
                             return false;
                         }
 
+                        if result == 0.5 {
+                            return true;
+                        }
+
                         let filter = |pos: &Position, result: f32, material: i32| -> bool {
                             let white_sac = pos.stm() == 0 && result > 0.9 && material < -300 && material > -2000;
                             let black_sac = pos.stm() == 1 && result < 0.1 && material < -300 && material > -2000;
