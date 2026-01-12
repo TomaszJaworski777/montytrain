@@ -16,7 +16,7 @@ use bullet::{
 
 // --- CONFIGURATION ---
 const INPUT_PATH: &str = "interleaved-value.bin";
-const OUTPUT_PATH: &str = "finetune-data.bin";
+const OUTPUT_PATH: &str = "finetune-value.bin";
 const THREADS: usize = 6;
 const BATCH_SIZE: usize = 1024; // Increased slightly for smoother progress updates
 
@@ -65,9 +65,37 @@ fn main() -> std::io::Result<()> {
                 let mut local_buffer = Vec::new();
 
                 for game_bytes in batch {
-                    process_game(&game_bytes, &mut local_buffer, |pos, mv, score, result| {
-                        // --- FILTER LOGIC ---
-                        true 
+                    process_game(&game_bytes, &mut local_buffer, |pos, _, _, result| {
+                        if pos.piece(Piece::QUEEN).count_ones() > 2 
+                            || pos.piece(Piece::ROOK).count_ones() > 5 
+                            || pos.piece(Piece::KNIGHT).count_ones() > 5 
+                            || pos.piece(Piece::BISHOP).count_ones() > 5 
+                        {
+                            return false;
+                        }
+
+                        if calculate_material(pos) > -300 {
+                            return false;
+                        }
+
+                        let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
+
+                        let mut castling = Castling::default();
+                        let qs_score = qsearch(pos, &castling, -30000, 30000, 0);
+
+                        let white_sac = pos.stm() == 0 && result > 0.9 && qs_score < -300 && qs_score > -2000;
+                        let black_sac = pos.stm() == 1 && result < 0.1 && qs_score < -300 && qs_score > -2000;
+
+                        let filter = white_sac || black_sac;
+
+                        // if filter {
+                        //     println!("passed with result {result}, qsearch {}: {}", qs_score, fen)
+                        // } 
+                        // else {
+                        //     println!("not passed {}, result: {}", pos.as_fen(), result)
+                        // }
+
+                        filter
                     });
                 }
 
@@ -178,4 +206,109 @@ where
             pos.make(data.best_move, &castling);
         }
     }
+}
+
+fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8) -> i32 {
+    let in_check = pos.in_check();
+
+    if !in_check {
+        let eval = calculate_material(pos);
+
+        if eval >= beta {
+            return beta;
+        }
+
+        if eval > alpha {
+            alpha = eval;
+        }
+    }
+
+    if depth > 6 {
+        return if in_check { alpha } else { calculate_material(pos) };
+    }
+
+    let mut move_list = Vec::new();
+    pos.map_legal_moves(castling, |mv| {
+        if depth == 0 && (mv.is_promo() || mv_is_check(mv, pos, castling)) {
+            move_list.push((mv, get_move_value(pos, mv)));
+            return;
+        }
+
+        if depth == 1 && in_check {
+            move_list.push((mv, get_move_value(pos, mv)));
+            return;
+        }
+
+        if mv.is_capture() {
+            move_list.push((mv, get_move_value(pos, mv)))
+        }
+    });
+
+    move_list.sort_by(|(_, a), (_, b)| b.cmp(&a));
+
+    for (idx, &(mv, _)) in move_list.iter().enumerate() {
+        if mv == Move::NULL {
+            continue;
+        }
+
+        let mut pos_cpy = pos.clone();
+        pos_cpy.make(mv, castling);
+
+        let score = -qsearch(&pos_cpy, castling, -beta, -alpha, depth + 1);
+
+        if score >= beta {
+            return beta;
+        }
+
+        if score > alpha {
+            alpha = score;
+        }
+    }
+
+    alpha
+}
+
+#[inline]
+fn get_move_value(pos: &Position, mv: Move) -> i32 {
+    let mut result: i32 = 0;
+
+    if mv.is_capture() {
+        let moving_piece = pos.get_pc(1 << mv.src());
+        let target_piece = pos.get_pc(1 << mv.to());
+        result += ((target_piece + 1) as i32 * 100) - (moving_piece + 1) as i32;
+    }
+
+    if mv.is_promo() {
+        result += ((mv.promo_pc() + 1) as i32) * 100;
+    }
+
+    return result;
+}
+
+#[inline]
+fn calculate_material(pos: &Position) -> i32 {
+    let stm = pos.boys(); 
+    let nstm = pos.opps();
+
+    let mut score = 0;
+    score += (pos.piece(Piece::PAWN) & stm).count_ones() as i32 * 100;
+    score += (pos.piece(Piece::KNIGHT) & stm).count_ones() as i32 * 300;
+    score += (pos.piece(Piece::BISHOP) & stm).count_ones() as i32 * 300;
+    score += (pos.piece(Piece::ROOK) & stm).count_ones() as i32 * 500;
+    score += (pos.piece(Piece::QUEEN) & stm).count_ones() as i32 * 900;
+
+    score -= (pos.piece(Piece::PAWN) & nstm).count_ones() as i32 * 100;
+    score -= (pos.piece(Piece::KNIGHT) & nstm).count_ones() as i32 * 300;
+    score -= (pos.piece(Piece::BISHOP) & nstm).count_ones() as i32 * 300;
+    score -= (pos.piece(Piece::ROOK) & nstm).count_ones() as i32 * 500;
+    score -= (pos.piece(Piece::QUEEN) & nstm).count_ones() as i32 * 900;
+
+    score
+}
+
+#[inline]
+fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
+    let mut pos_clone = pos.clone();
+    pos_clone.make(mv, castling);
+    pos_clone.in_check()
 }
