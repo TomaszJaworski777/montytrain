@@ -75,7 +75,7 @@ fn main() -> std::io::Result<()> {
                             return false;
                         }
 
-                        if result == 0.5 {
+                        if result == 0.5 && calculate_material(pos).abs() >= 200 {
                             return true;
                         }
 
