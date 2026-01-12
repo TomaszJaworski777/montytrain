@@ -62,7 +62,7 @@ fn main() {
         batch_queue_size: 32,
     };
 
-    let data_loader = loader::SfBinpackLoader::new(
+    let data_loader = loader::DataLoader::new(
         "./finetune-value.bin",
         32000,
         4,
