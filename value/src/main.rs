@@ -62,11 +62,8 @@ fn main() {
         batch_queue_size: 32,
     };
 
-    let data_loader = loader::DataLoader::new(
-        "./finetune-value.bin",
-        32000,
-        4,
-        |_| true,
+    let data_loader = loader::DirectSequentialDataLoader::new(
+        &["./finetune-value.bin"],
     );
 
     trainer.load_from_checkpoint("value_checkpoints/MontyThreats-4000");
