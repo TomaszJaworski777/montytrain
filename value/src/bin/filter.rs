@@ -75,6 +75,10 @@ fn main() -> std::io::Result<()> {
                             return false;
                         }
 
+                        if calculate_material(pos) > -300 {
+                            return false;
+                        }
+
                         let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
                         let mut castling = Castling::default();
