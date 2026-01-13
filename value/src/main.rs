@@ -38,8 +38,8 @@ fn main() {
         },
         wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
         lr_scheduler: lr::ExponentialDecayLR {
-            initial_lr: /*0.001,*/ 0.0000001,
-            final_lr: /*0.0000001,*/ 0.000000001,
+            initial_lr: /*0.001,*/ 0.00000035,
+            final_lr: /*0.0000001,*/ 0.0000000035,
             final_superbatch: END_SUPERBATCH,
         },
         save_rate: 5,
