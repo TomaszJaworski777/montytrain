@@ -90,7 +90,7 @@ fn main() -> std::io::Result<()> {
 
                         let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
-                        let mut castling = Castling::default();
+                        let castling = Castling::default();
                         filter(pos, result, qsearch(pos, &castling, -30000, 30000, 0))
                     });
                 }

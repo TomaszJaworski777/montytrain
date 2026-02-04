@@ -185,14 +185,14 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
         white_sac || black_sac || n_white_sac || n_black_sac
     };
 
-    if !filter(pos, result, material_balance) {
+    if !filter(pos, game_result, material_balance) {
         return false;
     }
 
     let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
 
     let mut castling = Castling::default();
-    filter(pos, result, qsearch(pos, &castling, -30000, 30000, 0))
+    filter(pos, game_result, qsearch(pos, &castling, -30000, 30000, 0))
 }
 
 fn print_progress(bytes_read: u64, total_bytes: u64, start_time: Instant) {
