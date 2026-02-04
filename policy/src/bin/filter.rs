@@ -5,8 +5,8 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use bullet::game::formats::montyformat::chess::{Castling, Piece, Move, Position};
-use bullet::game::formats::montyformat::{FastDeserialise, MontyFormat, SearchData};
+use montyformat::chess::{Castling, Piece, Move, Position};
+use montyformat::{FastDeserialise, MontyFormat, SearchData};
 
 const INPUT_PATH: &str = "interleaved-policy.bin";
 const OUTPUT_PATH: &str = "finetune-policy.bin";
@@ -137,7 +137,7 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
 
         for data in game.moves {
             // Check if this specific board + move is "Aggressive & Winning"
-            if is_aggressive_win(&pos, &castling, &data, result) {
+            if is_aggressive_win(&pos, &castling, &data, result, data.best_move) {
                 let mut moves_array = [(0u16, 0u16); MAX_MOVES];
                 let mut num = 0;
 
@@ -164,9 +164,12 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
     }
 }
 
-fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, game_result: f32) -> bool {
+fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, game_result: f32, best_move: Move) -> bool {
+    let pos = &pos.clone();
+    pos.make(best_move, castling);
+
     let material_balance = calculate_material(pos);
-    if pos.piece(Piece::QUEEN).count_ones() > 2 || material_balance.abs() > 2500 {
+    if pos.piece(Piece::QUEEN).count_ones() > 2 || material_balance.abs() > 1000 {
         return false;
     }
 
