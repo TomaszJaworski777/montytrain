@@ -77,6 +77,7 @@ fn main() {
         "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
         "8/kpp5/b7/8/2Q5/8/8/5K2 w - - 0 1",
         "1k1rqb2/2ppprpp/pp3p2/8/2P5/8/1QPPPPPP/RR4K1 w - - 0 1",
+        "1k1rqbb1/2ppprpp/pp3p2/8/2P5/8/1QPPPPPP/RR4K1 w - - 0 1"
     ] {
         let vals = trainer.eval_raw_output(fen);
         println!("FEN: {fen}");

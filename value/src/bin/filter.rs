@@ -6,20 +6,19 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use bullet::game::formats::montyformat::chess::{Castling, Piece};
-// IMPORTS: Adjust these paths to match your actual crate structure
 use bullet::{
     game::formats::montyformat::{
         FastDeserialise, MontyValueFormat,
         chess::{Move, Position},
     },
-    game::formats::bulletformat::ChessBoard, // Assuming this is the target output format
+    game::formats::bulletformat::ChessBoard,
 };
 
 // --- CONFIGURATION ---
 const INPUT_PATH: &str = "interleaved-value.bin";
 const OUTPUT_PATH: &str = "finetune-value.bin";
 const THREADS: usize = 6;
-const BATCH_SIZE: usize = 1024; // Increased slightly for smoother progress updates
+const BATCH_SIZE: usize = 1024;
 
 fn main() -> std::io::Result<()> {
     println!("Starting conversion: {} -> {}", INPUT_PATH, OUTPUT_PATH);
