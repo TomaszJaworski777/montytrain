@@ -137,7 +137,7 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
 
         for data in game.moves {
             // Check if this specific board + move is "Aggressive & Winning"
-            if is_attacking_win(&pos, &castling, &data, result, data.best_move) {
+            if is_fast_win(&pos, &castling, &data, result, game.moves.len()) {
                 let mut moves_array = [(0u16, 0u16); MAX_MOVES];
                 let mut num = 0;
 
@@ -221,11 +221,20 @@ fn is_attacking_win(pos: &Position, castling: &Castling, data: &SearchData, game
         return false;
     }
 
-    if distance <= 4 {
-        println!("{best_move}: from: {}, to: {}, rank: {}", best_move.src(), best_move.to(), best_move_rank)
+    return distance <= 4;
+}
+
+fn is_fast_win(pos: &Position, castling: &Castling, data: &SearchData, game_result: f32, game_length: usize) -> bool {
+    if pos.stm() == 0 && game_result < 0.9 || pos.stm() == 1 && game_result > 0.1 {
+        return false;
     }
 
-    return distance <= 4;
+    let material_balance = calculate_material(pos);
+    if pos.piece(Piece::QUEEN).count_ones() > 2 || material_balance.abs() > 1000 {
+        return false;
+    }
+
+    return game_length <= 40;
 }
 
 fn print_progress(bytes_read: u64, total_bytes: u64, start_time: Instant) {
