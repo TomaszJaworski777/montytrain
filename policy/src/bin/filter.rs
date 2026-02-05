@@ -184,17 +184,17 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
     }
 
     let mut pos = Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
-    let qsearch = qsearch(&pos, &castling, -30000, 30000, 0);
+    let old_qsearch = qsearch(&pos, &castling, -30000, 30000, 0);
 
     let mut castling = Castling::default();
-    if !filter(&pos, game_result, qsearch) {
+    if !filter(&pos, game_result, old_qsearch) {
         return false;
     }
 
     pos.make(best_move, &castling);
     let new_qsearch = -qsearch(&pos, &castling, -30000, 30000, 0);
 
-    return new_qsearch < qsearch;
+    return new_qsearch < old_qsearch;
 }
 
 fn print_progress(bytes_read: u64, total_bytes: u64, start_time: Instant) {
