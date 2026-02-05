@@ -199,7 +199,7 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
 }
 
 fn is_attacking_win(pos: &Position, castling: &Castling, data: &SearchData, game_result: f32, best_move: Move) -> bool {
-    if pos.stm() == 0 && result < 0.9 || pos.stm() == 1 && result > 0.1 {
+    if pos.stm() == 0 && game_result < 0.9 || pos.stm() == 1 && game_result > 0.1 {
         return false;
     }
 
