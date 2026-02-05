@@ -10,7 +10,7 @@ use montyformat::{FastDeserialise, MontyFormat, SearchData};
 
 const INPUT_PATH: &str = "interleaved-policy.bin";
 const OUTPUT_PATH: &str = "finetune-policy.bin";
-const THREADS: usize = 1;
+const THREADS: usize = 6;
 const BATCH_SIZE: usize = 1024;
 const MAX_MOVES: usize = 64; 
 
@@ -138,9 +138,11 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
 
         for data in game.moves {
             // Check if this specific board + move is "Aggressive & Winning"
-            if is_fast_win(&pos, &castling, &data, result, length) {
+            if is_fast_win(&pos, &castling, &data, result, length) || 
+                is_aggressive_win(&pos, &castling, &data, result, data.best_move) ||
+                is_attacking_win(&pos, &castling, &data, result, data.best_move) {
                 let mut moves_array = [(0u16, 0u16); MAX_MOVES];
-                let mut num = 0;
+                let mut num: usize = 0;
 
                 if let Some(ref dist) = data.visit_distribution {
                     for (i, &(m, visits)) in dist.iter().enumerate().take(MAX_MOVES) {
@@ -152,8 +154,6 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
                     moves_array[0] = (u16::from(data.best_move), 100);
                     num = 1;
                 }
-
-                println!("{}, {}", pos.as_fen(), data.best_move);
 
                 output.push(DecompressedData {
                     pos: pos.clone(),
@@ -168,6 +168,10 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
 }
 
 fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, game_result: f32, best_move: Move) -> bool {
+    if pos.stm() == 0 && game_result < 0.9 || pos.stm() == 1 && game_result > 0.1 {
+        return false;
+    }
+
     if best_move.flag() == Flag::KS || best_move.flag() == Flag::QS {
         return false;
     }
