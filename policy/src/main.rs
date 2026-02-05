@@ -38,7 +38,7 @@ fn preamble() {
 }
 
 fn main() {
-    let dataloader = MontyDataLoader::new("./finetune-policy.bin", 96000, 8, 8);
+    let dataloader = MontyDataLoader::new("./finetune-policy.bin", 48000, 8, 8);
 
     let device = CudaDevice::new(0).unwrap();
 
@@ -49,7 +49,7 @@ fn main() {
 
     let mut trainer = Trainer { optimiser, state: () };
 
-    let save_rate = 10;
+    let save_rate = 5;
 
     let steps = TrainingSteps { batch_size: 16384, batches_per_superbatch: 6104, start_superbatch: START_SUPERBATCH, end_superbatch: END_SUPERBATCH };
 

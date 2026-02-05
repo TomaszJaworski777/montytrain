@@ -30,7 +30,6 @@ fn main() -> std::io::Result<()> {
     let (work_sender, work_receiver) = sync_channel::<Vec<Vec<u8>>>(THREADS * 4);
     let (write_sender, write_receiver) = sync_channel::<Vec<DecompressedData>>(THREADS * 4);
 
-    // 1. Writer Thread
     let writer_handle = thread::spawn(move || -> std::io::Result<()> {
         let mut writer = BufWriter::new(File::create(OUTPUT_PATH)?);
         let mut count = 0usize;
@@ -52,7 +51,6 @@ fn main() -> std::io::Result<()> {
         Ok(())
     });
 
-    // 2. Worker Threads
     let work_receiver = Arc::new(Mutex::new(work_receiver));
     let mut worker_handles = Vec::new();
 
@@ -85,7 +83,6 @@ fn main() -> std::io::Result<()> {
 
     drop(write_sender);
 
-    // 3. Reader Loop
     let input_file = File::open(INPUT_PATH)?;
     let total_size = input_file.metadata()?.len();
     let mut reader = BufReader::new(input_file);
@@ -97,7 +94,6 @@ fn main() -> std::io::Result<()> {
 
     loop {
         let mut buffer = Vec::new();
-        // Uses your FastDeserialise implementation to chunk games
         if MontyFormat::deserialise_fast_into_buffer(&mut reader, &mut buffer).is_err() || buffer.is_empty() {
             break;
         }
@@ -134,10 +130,9 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
         let length = game.moves.len();
         let mut pos = game.startpos;
         let castling = game.castling;
-        let result = game.result; // 1.0 = White Win, 0.0 = Black Win, 0.5 = Draw
+        let result = game.result;
 
         for data in game.moves {
-            // Check if this specific board + move is "Aggressive & Winning"
             if is_fast_win(&pos, &castling, &data, result, length) || 
                 is_aggressive_win(&pos, &castling, &data, result, data.best_move) ||
                 is_attacking_win(&pos, &castling, &data, result, data.best_move) {
@@ -150,7 +145,6 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
                         num += 1;
                     }
                 } else {
-                    // Fallback to best move if distribution is missing
                     moves_array[0] = (u16::from(data.best_move), 100);
                     num = 1;
                 }
