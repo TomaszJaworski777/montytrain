@@ -207,7 +207,7 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
     //     println!("{new_v} < {old_v}, {}", );
     //     return true;
     // }
-    return see;
+    return !see;
 }
 
 fn print_progress(bytes_read: u64, total_bytes: u64, start_time: Instant) {
