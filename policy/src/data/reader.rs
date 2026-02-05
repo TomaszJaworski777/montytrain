@@ -11,6 +11,7 @@ use montyformat::{
 
 use crate::inputs::MAX_MOVES;
 
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct DecompressedData {
     pub pos: Position,
