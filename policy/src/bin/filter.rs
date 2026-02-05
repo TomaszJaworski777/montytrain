@@ -167,9 +167,7 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
 }
 
 fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, game_result: f32, best_move: Move) -> bool {
-    let mut pos = pos.clone();
-
-    let material_balance = calculate_material(&pos);
+    let material_balance = calculate_material(pos);
     if pos.piece(Piece::QUEEN).count_ones() > 2 || material_balance.abs() > 1000 {
         return false;
     }
@@ -184,11 +182,11 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
         white_sac || black_sac || n_white_sac || n_black_sac
     };
 
-    if !filter(&pos, game_result, material_balance) {
+    if !filter(pos, game_result, material_balance) {
         return false;
     }
 
-    let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
+    let mut pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
     let qsearch = qsearch(pos, &castling, -30000, 30000, 0);
 
     let mut castling = Castling::default();
