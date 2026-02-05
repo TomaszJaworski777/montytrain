@@ -209,11 +209,11 @@ fn is_attacking_win(pos: &Position, castling: &Castling, data: &SearchData, game
     }
 
     let king_sq = pos.king_sq(1 - pos.stm());
-    let king_file = (king_sq / 8) as i32;
-    let king_rank = (king_sq % 8) as i32;
+    let king_rank = (king_sq / 8) as i32;
+    let king_file = (king_sq % 8) as i32;
 
-    let best_move_file = (best_move.to() / 8) as i32;
-    let best_move_rank = (best_move.to() % 8) as i32;
+    let best_move_rank = (best_move.to() / 8) as i32;
+    let best_move_file = (best_move.to() % 8) as i32;
 
     let distance = (king_file - best_move_file).abs() + (king_rank - best_move_rank).abs();
 
@@ -222,7 +222,7 @@ fn is_attacking_win(pos: &Position, castling: &Castling, data: &SearchData, game
     }
 
     if distance <= 4 {
-        println!("{best_move_rank}")
+        println!("{best_move}: from: {}, to: {}, rank: {}", best_move.src(), best_move.to(), best_move_rank)
     }
 
     return distance <= 4;
