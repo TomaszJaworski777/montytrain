@@ -232,11 +232,7 @@ fn ab(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8)
         //     move_list.push(mv);
         // }
 
-        if depth == 0 && mv_is_check(mv, pos, castling) {
-            move_list.push(mv);
-        }
-
-        if mv.is_capture() {
+        if mv.is_capture() && mv_is_check(mv, pos, castling) {
             move_list.push(mv);
         }
     });
