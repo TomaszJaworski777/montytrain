@@ -7,8 +7,8 @@ use acyclib::{
 };
 use montyformat::chess::Move;
 
-use super::reader::{DataReader, FilterDataReader, DecompressedData};
-use crate::inputs::{self, INPUT_SIZE, MAX_ACTIVE_BASE, MAX_MOVES, NUM_MOVES_INDICES};
+use super::reader::{DataReader, DecompressedData};
+use crate::{data::fliter_reader::FilterDataReader, inputs::{self, INPUT_SIZE, MAX_ACTIVE_BASE, MAX_MOVES, NUM_MOVES_INDICES}};
 
 #[derive(Clone)]
 pub struct MontyDataLoader {
