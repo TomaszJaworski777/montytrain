@@ -224,7 +224,7 @@ fn ab(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8)
         if eval >= beta { return beta; }
         if eval > alpha { alpha = eval; }
     }
-    if depth > 5 { return if in_check { alpha } else { calculate_material(pos) }; }
+    if depth > 2 { return if in_check { alpha } else { calculate_material(pos) }; }
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
