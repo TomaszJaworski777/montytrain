@@ -38,7 +38,7 @@ fn preamble() {
 }
 
 fn main() {
-    let dataloader = MontyDataLoader::new("./finetune-policy.bin", 48000, 8, 8);
+    let dataloader = MontyDataLoader::new("./finetune-policy.bin", 16000, 4, 4);
 
     let device = CudaDevice::new(0).unwrap();
 
