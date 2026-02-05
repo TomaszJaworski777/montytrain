@@ -176,10 +176,7 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
         let white_sac = pos.stm() == 0 && result > 0.9 && material < -300 && material > -2000;
         let black_sac = pos.stm() == 1 && result < 0.1 && material < -300 && material > -2000;
 
-        let n_white_sac = pos.stm() == 0 && result < 0.1 && material > 300 && material < 2000;
-        let n_black_sac = pos.stm() == 1 && result > 0.9 && material > 300 && material < 2000;
-
-        white_sac || black_sac || n_white_sac || n_black_sac
+        white_sac || black_sac
     };
 
     if !filter(pos, game_result, material_balance) {
