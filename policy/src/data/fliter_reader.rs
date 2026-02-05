@@ -5,11 +5,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-// Use the same struct definition as in the filter script
-use bullet::game::formats::montyformat::chess::{Castling, Position};
-
 use crate::data::reader::DecompressedData;
-const MAX_MOVES: usize = 256;
+use crate::inputs::MAX_MOVES;
 
 #[derive(Clone)]
 pub struct FilterDataReader {
@@ -20,7 +17,7 @@ pub struct FilterDataReader {
 impl FilterDataReader {
     pub fn new(path: &str, buffer_size_mb: usize) -> Self {
         let struct_size = std::mem::size_of::<DecompressedData>();
-        let capacity = (buffer_size_mb * 1024 * 1024) / struct_size;
+        let capacity = (buffer_size_mb * 1024 * 1024) / struct_size / 2;
         Self {
             file_path: path.to_string(),
             buffer_size: capacity,
