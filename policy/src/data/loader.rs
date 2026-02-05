@@ -7,18 +7,18 @@ use acyclib::{
 };
 use montyformat::chess::Move;
 
-use super::reader::{DataReader, DecompressedData};
+use super::reader::{DataReader, FilterDataReader, DecompressedData};
 use crate::inputs::{self, INPUT_SIZE, MAX_ACTIVE_BASE, MAX_MOVES, NUM_MOVES_INDICES};
 
 #[derive(Clone)]
 pub struct MontyDataLoader {
-    reader: DataReader,
+    reader: FilterDataReader,
     threads: usize,
 }
 
 impl MontyDataLoader {
     pub fn new(path: &str, buffer_size_mb: usize, reader_threads: usize, loader_threads: usize) -> Self {
-        Self { reader: DataReader::new(path, buffer_size_mb, reader_threads), threads: loader_threads }
+        Self { reader: FilterDataReader::new(path, buffer_size_mb, reader_threads), threads: loader_threads }
     }
 }
 
