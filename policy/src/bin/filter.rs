@@ -168,7 +168,6 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
 
 fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, game_result: f32, best_move: Move) -> bool {
     let mut pos = pos.clone();
-    pos.make(best_move, castling);
 
     let material_balance = calculate_material(&pos);
     if pos.piece(Piece::QUEEN).count_ones() > 2 || material_balance.abs() > 1000 {
@@ -176,11 +175,11 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
     }
 
     let filter = |pos: &Position, result: f32, material: i32| -> bool {
-        let white_sac = pos.stm() == 1 && result > 0.9 && material < -300 && material > -2000;
-        let black_sac = pos.stm() == 0 && result < 0.1 && material < -300 && material > -2000;
+        let white_sac = pos.stm() == 0 && result > 0.9 && material < -300 && material > -2000;
+        let black_sac = pos.stm() == 1 && result < 0.1 && material < -300 && material > -2000;
 
-        let n_white_sac = pos.stm() == 1 && result < 0.1 && material > 300 && material < 2000;
-        let n_black_sac = pos.stm() == 0 && result > 0.9 && material > 300 && material < 2000;
+        let n_white_sac = pos.stm() == 0 && result < 0.1 && material > 300 && material < 2000;
+        let n_black_sac = pos.stm() == 1 && result > 0.9 && material > 300 && material < 2000;
 
         white_sac || black_sac || n_white_sac || n_black_sac
     };
@@ -190,9 +189,16 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
     }
 
     let pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
+    let qsearch = qsearch(pos, &castling, -30000, 30000, 0);
 
     let mut castling = Castling::default();
-    filter(pos, game_result, qsearch(pos, &castling, -30000, 30000, 0))
+    if !filter(pos, game_result, qsearch) {
+        return false;
+    }
+
+    pos.make(best_move, &castling);
+
+    return true;
 }
 
 fn print_progress(bytes_read: u64, total_bytes: u64, start_time: Instant) {
