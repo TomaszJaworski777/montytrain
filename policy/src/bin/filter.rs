@@ -137,7 +137,7 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
 
         for data in game.moves {
             // Check if this specific board + move is "Aggressive & Winning"
-            if is_aggressive_win(&pos, &castling, &data, result, data.best_move) {
+            if is_attacking_win(&pos, &castling, &data, result, data.best_move) {
                 let mut moves_array = [(0u16, 0u16); MAX_MOVES];
                 let mut num = 0;
 
@@ -195,19 +195,33 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
         return false;
     }
 
-    let see = see(&pos, &best_move, -300);
-    // pos.make(best_move, &castling);
-    // let new_v = -ab(&pos, &castling, -30000, 30000, 0);
+    return !see(&pos, &best_move, -300);
+}
 
-    // if new_v.abs() > 10000 {
-    //     return false;
-    // }
+fn is_attacking_win(pos: &Position, castling: &Castling, data: &SearchData, game_result: f32, best_move: Move) -> bool {
+    if pos.stm() == 0 && result < 0.9 || pos.stm() == 1 && result > 0.1 {
+        return false;
+    }
 
-    // if new_v + 300 <= old_v {
-    //     println!("{new_v} < {old_v}, {}", );
-    //     return true;
-    // }
-    return !see;
+    let material_balance = calculate_material(pos);
+    if pos.piece(Piece::QUEEN).count_ones() > 2 || material_balance.abs() > 1000 {
+        return false;
+    }
+
+    let king_sq = pos.king_sq(1 - pos.stm());
+    let king_file = (king_sq / 8) as i32;
+    let king_rank = (king_sq % 8) as i32;
+
+    let best_move_file = (best_move.to() / 8) as i32;
+    let best_move_rank = (best_move.to() % 8) as i32;
+
+    let distance = (king_file - best_move_file).abs() + (king_rank - best_move_rank).abs();
+
+    if (pos.stm() == 0 && best_move_rank < 4) || (pos.stm() == 1 && best_move_rank > 3) {
+        return false;
+    }
+
+    return distance <= 4;
 }
 
 fn print_progress(bytes_read: u64, total_bytes: u64, start_time: Instant) {
@@ -225,17 +239,11 @@ fn ab(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8)
         if eval >= beta { return beta; }
         if eval > alpha { alpha = eval; }
     }
-    if depth > 8 { return if in_check { alpha } else { calculate_material(pos) }; }
+    if depth > 4 { return if in_check { alpha } else { calculate_material(pos) }; }
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
-        // if mv.is_capture() || mv.is_promo() || (depth == 0 && mv_is_check(mv, pos, castling)) {
-        //     move_list.push(mv);
-        // }
-
-        if mv.is_capture() || mv_is_check(mv, pos, castling) {
-            move_list.push(mv);
-        }
+        move_list.push(mv);
     });
 
     for mv in move_list {
