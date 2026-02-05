@@ -224,7 +224,7 @@ fn ab(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8)
         if eval >= beta { return beta; }
         if eval > alpha { alpha = eval; }
     }
-    if depth > 4 { return if in_check { alpha } else { calculate_material(pos) }; }
+    if depth > 8 { return if in_check { alpha } else { calculate_material(pos) }; }
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
@@ -232,7 +232,7 @@ fn ab(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8)
         //     move_list.push(mv);
         // }
 
-        if mv.is_capture() && mv_is_check(mv, pos, castling) {
+        if mv.is_capture() || mv_is_check(mv, pos, castling) {
             move_list.push(mv);
         }
     });
