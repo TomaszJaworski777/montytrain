@@ -189,10 +189,10 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
     }
 
     let mut pos = Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
-    let old_v = ab(&pos, &castling, -30000, 30000, 0);
+    let material = ab(&pos, &castling, -30000, 30000, 0);
 
     let mut castling = Castling::default();
-    if !filter(&pos, game_result, old_v) {
+    if !filter(&pos, game_result, material) {
         return false;
     }
 
@@ -232,6 +232,25 @@ fn is_fast_win(pos: &Position, castling: &Castling, data: &SearchData, game_resu
 
     let material_balance = calculate_material(pos);
     if pos.piece(Piece::QUEEN).count_ones() > 2 || material_balance.abs() > 1000 {
+        return false;
+    }
+
+    let filter = |pos: &Position, result: f32, material: i32| -> bool {
+        let white_sac = pos.stm() == 0 && result > 0.9 && material < -300 && material > -2000;
+        let black_sac = pos.stm() == 1 && result < 0.1 && material < -300 && material > -2000;
+
+        white_sac || black_sac
+    };
+
+    if !filter(pos, game_result, material_balance) {
+        return false;
+    }
+
+    let mut pos = Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
+    let material = ab(&pos, &castling, -30000, 30000, 0);
+
+    let mut castling = Castling::default();
+    if !filter(&pos, game_result, material) {
         return false;
     }
 
