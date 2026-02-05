@@ -20,9 +20,13 @@ use data::MontyDataLoader;
 const NAME: &str = "policy-4096";
 const HL_SIZE: usize = 4096;
 const START_SUPERBATCH: usize = 1;
-const END_SUPERBATCH: usize = 200;
-const START_LR: f32 = 0.001;
-const END_LR: f32 = 0.00001; 
+const END_SUPERBATCH: usize = 20;
+
+// const START_LR: f32 = 0.001;
+// const END_LR: f32 = 0.00001; 
+
+const START_LR: f32 = 0.0000025;
+const END_LR: f32 = 0.000000025; 
 
 fn preamble() {
     println!("NAME:             {NAME}");
@@ -34,7 +38,7 @@ fn preamble() {
 }
 
 fn main() {
-    let dataloader = MontyDataLoader::new("./interleaved.bin", 96000, 8, 8);
+    let dataloader = MontyDataLoader::new("./finetune-policy.bin", 96000, 8, 8);
 
     let device = CudaDevice::new(0).unwrap();
 
