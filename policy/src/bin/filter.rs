@@ -192,9 +192,9 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
     }
 
     pos.make(best_move, &castling);
-    let new_qsearch = -qsearch(&pos, &castling, -30000, 30000, 0);
+    let new_qsearch = -qsearch(&pos, &castling, -30000, 30000, 0) + 300;
 
-    if new_qsearch < old_qsearch {
+    if new_qsearch <= old_qsearch {
         println!("{new_qsearch} < {old_qsearch}");
         return true;
     }
