@@ -188,22 +188,22 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
     }
 
     let mut pos = Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
-    let old_qsearch = qsearch(&pos, &castling, -30000, 30000, 0);
+    let old_v = ab(&pos, &castling, -30000, 30000, 0);
 
     let mut castling = Castling::default();
-    if !filter(&pos, game_result, old_qsearch) {
+    if !filter(&pos, game_result, old_v) {
         return false;
     }
 
     pos.make(best_move, &castling);
-    let new_qsearch = -qsearch(&pos, &castling, -30000, 30000, 0);
+    let new_v = -ab(&pos, &castling, -30000, 30000, 0);
 
-    if new_qsearch.abs() > 10000 {
+    if new_v.abs() > 10000 {
         return false;
     }
 
-    if new_qsearch + 300 <= old_qsearch {
-        println!("{new_qsearch} < {old_qsearch}");
+    if new_v + 300 <= old_v {
+        println!("{new_v} < {old_v}");
         return true;
     }
     return false;
@@ -217,14 +217,14 @@ fn print_progress(bytes_read: u64, total_bytes: u64, start_time: Instant) {
     let _ = std::io::stdout().flush();
 }
 
-fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8) -> i32 {
+fn ab(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth: u8) -> i32 {
     let in_check = pos.in_check();
     if !in_check {
         let eval = calculate_material(pos);
         if eval >= beta { return beta; }
         if eval > alpha { alpha = eval; }
     }
-    if depth > 4 { return if in_check { alpha } else { calculate_material(pos) }; }
+    if depth > 5 { return if in_check { alpha } else { calculate_material(pos) }; }
 
     let mut move_list = Vec::new();
     pos.map_legal_moves(castling, |mv| {
@@ -238,7 +238,7 @@ fn qsearch(pos: &Position, castling: &Castling, mut alpha: i32, beta: i32, depth
     for mv in move_list {
         let mut pos_cpy = pos.clone();
         pos_cpy.make(mv, castling);
-        let score = -qsearch(&pos_cpy, castling, -beta, -alpha, depth + 1);
+        let score = -ab(&pos_cpy, castling, -beta, -alpha, depth + 1);
         if score >= beta { return beta; }
         if score > alpha { alpha = score; }
     }
