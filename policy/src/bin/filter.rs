@@ -5,7 +5,7 @@ use std::thread;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use montyformat::chess::{Castling, Flag, Move, Piece, Position};
+use montyformat::chess::{Attacks, Castling, Flag, Move, Piece, Position, Side};
 use montyformat::{FastDeserialise, MontyFormat, SearchData};
 
 const INPUT_PATH: &str = "interleaved-policy.bin";
@@ -195,18 +195,19 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
         return false;
     }
 
-    pos.make(best_move, &castling);
-    let new_v = -ab(&pos, &castling, -30000, 30000, 0);
+    let see = see(&pos, &best_move, -300);
+    // pos.make(best_move, &castling);
+    // let new_v = -ab(&pos, &castling, -30000, 30000, 0);
 
-    if new_v.abs() > 10000 {
-        return false;
-    }
+    // if new_v.abs() > 10000 {
+    //     return false;
+    // }
 
-    if new_v + 300 <= old_v {
-        println!("{new_v} < {old_v}");
-        return true;
-    }
-    return false;
+    // if new_v + 300 <= old_v {
+    //     println!("{new_v} < {old_v}, {}", );
+    //     return true;
+    // }
+    return see;
 }
 
 fn print_progress(bytes_read: u64, total_bytes: u64, start_time: Instant) {
@@ -269,3 +270,82 @@ fn mv_is_check(mv: Move, pos: &Position, castling: &Castling) -> bool {
     pos_clone.make(mv, castling);
     pos_clone.in_check()
 }
+
+pub fn see(pos: &Position, mov: &Move, threshold: i32) -> bool {
+    let sq = usize::from(mov.to());
+    assert!(sq < 64, "wha");
+    let mut next = if mov.is_promo() {
+        mov.promo_pc()
+    } else {
+        pos.get_pc(1 << mov.src())
+    };
+    let mut score = gain(pos, mov) - threshold - SEE_VALS[next];
+
+    if score >= 0 {
+        return true;
+    }
+
+    let mut occ = (pos.bbs()[Side::WHITE] | pos.bbs()[Side::BLACK]) ^ (1 << mov.src()) ^ (1 << sq);
+    if mov.is_en_passant() {
+        occ ^= 1 << (sq ^ 8);
+    }
+
+    let bishops = pos.bbs()[Piece::BISHOP] | pos.bbs()[Piece::QUEEN];
+    let rooks = pos.bbs()[Piece::ROOK] | pos.bbs()[Piece::QUEEN];
+    let mut us = 1 - pos.stm();
+    let mut attackers = (Attacks::knight(sq) & pos.bbs()[Piece::KNIGHT])
+        | (Attacks::king(sq) & pos.bbs()[Piece::KING])
+        | (Attacks::pawn(sq, Side::WHITE) & pos.bbs()[Piece::PAWN] & pos.bbs()[Side::BLACK])
+        | (Attacks::pawn(sq, Side::BLACK) & pos.bbs()[Piece::PAWN] & pos.bbs()[Side::WHITE])
+        | (Attacks::rook(sq, occ) & rooks)
+        | (Attacks::bishop(sq, occ) & bishops);
+
+    loop {
+        let our_attackers = attackers & pos.bbs()[us];
+        if our_attackers == 0 {
+            break;
+        }
+
+        for pc in Piece::PAWN..=Piece::KING {
+            let board = our_attackers & pos.bbs()[pc];
+            if board > 0 {
+                occ ^= board & board.wrapping_neg();
+                next = pc;
+                break;
+            }
+        }
+
+        if [Piece::PAWN, Piece::BISHOP, Piece::QUEEN].contains(&next) {
+            attackers |= Attacks::bishop(sq, occ) & bishops;
+        }
+        if [Piece::ROOK, Piece::QUEEN].contains(&next) {
+            attackers |= Attacks::rook(sq, occ) & rooks;
+        }
+
+        attackers &= occ;
+        score = -score - 1 - SEE_VALS[next];
+        us ^= 1;
+
+        if score >= 0 {
+            if next == Piece::KING && attackers & pos.bbs()[us] > 0 {
+                us ^= 1;
+            }
+            break;
+        }
+    }
+
+    (pos.stm() == 1) != (us == 1)
+}
+
+fn gain(pos: &Position, mov: &Move) -> i32 {
+    if mov.is_en_passant() {
+        return SEE_VALS[Piece::PAWN];
+    }
+    let mut score = SEE_VALS[pos.get_pc(1 << mov.to())];
+    if mov.is_promo() {
+        score += SEE_VALS[mov.promo_pc()] - SEE_VALS[Piece::PAWN];
+    }
+    score
+}
+
+pub const SEE_VALS: [i32; 8] = [0, 0, 100, 450, 450, 650, 1250, 0];
