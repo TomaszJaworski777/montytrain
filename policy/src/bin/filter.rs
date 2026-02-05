@@ -221,6 +221,10 @@ fn is_attacking_win(pos: &Position, castling: &Castling, data: &SearchData, game
         return false;
     }
 
+    if distance <= 4 {
+        println!("{best_move_rank}")
+    }
+
     return distance <= 4;
 }
 
