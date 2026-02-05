@@ -194,7 +194,11 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
     pos.make(best_move, &castling);
     let new_qsearch = -qsearch(&pos, &castling, -30000, 30000, 0);
 
-    return new_qsearch < old_qsearch;
+    if new_qsearch < old_qsearch {
+        println!("{new_qsearch} < {old_qsearch}");
+        return true;
+    }
+    return false;
 }
 
 fn print_progress(bytes_read: u64, total_bytes: u64, start_time: Instant) {
