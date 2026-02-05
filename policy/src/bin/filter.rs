@@ -186,11 +186,11 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
         return false;
     }
 
-    let mut pos = &Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
-    let qsearch = qsearch(pos, &castling, -30000, 30000, 0);
+    let mut pos = Position::from_raw(pos.bbs(), pos.stm() == 1, pos.enp_sq(), 0, pos.halfm(), pos.fullm());
+    let qsearch = qsearch(&pos, &castling, -30000, 30000, 0);
 
     let mut castling = Castling::default();
-    if !filter(pos, game_result, qsearch) {
+    if !filter(&pos, game_result, qsearch) {
         return false;
     }
 
