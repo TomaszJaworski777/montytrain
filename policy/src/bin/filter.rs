@@ -131,13 +131,14 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
     let mut reader = Cursor::new(game_bytes);
 
     if let Ok(game) = MontyFormat::deserialise_from(&mut reader) {
+        let length = game.moves.len();
         let mut pos = game.startpos;
         let castling = game.castling;
         let result = game.result; // 1.0 = White Win, 0.0 = Black Win, 0.5 = Draw
 
         for data in game.moves {
             // Check if this specific board + move is "Aggressive & Winning"
-            if is_fast_win(&pos, &castling, &data, result, game.moves.len()) {
+            if is_fast_win(&pos, &castling, &data, result, length) {
                 let mut moves_array = [(0u16, 0u16); MAX_MOVES];
                 let mut num = 0;
 
