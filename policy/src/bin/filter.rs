@@ -176,11 +176,11 @@ fn is_aggressive_win(pos: &Position, castling: &Castling, data: &SearchData, gam
     }
 
     let filter = |pos: &Position, result: f32, material: i32| -> bool {
-        let white_sac = pos.stm() == 0 && result > 0.9 && material < -300 && material > -2000;
-        let black_sac = pos.stm() == 1 && result < 0.1 && material < -300 && material > -2000;
+        let white_sac = pos.stm() == 1 && result > 0.9 && material < -300 && material > -2000;
+        let black_sac = pos.stm() == 0 && result < 0.1 && material < -300 && material > -2000;
 
-        let n_white_sac = pos.stm() == 0 && result < 0.1 && material > 300;
-        let n_black_sac = pos.stm() == 1 && result > 0.9 && material > 300;
+        let n_white_sac = pos.stm() == 1 && result < 0.1 && material > 300 && material < 2000;
+        let n_black_sac = pos.stm() == 0 && result > 0.9 && material > 300 && material < 2000;
 
         white_sac || black_sac || n_white_sac || n_black_sac
     };
