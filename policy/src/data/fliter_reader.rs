@@ -63,7 +63,7 @@ impl FilterDataReader {
             let mut shuffle_buffer = Vec::with_capacity(buffer_size);
             
             while let Ok(chunk) = raw_receiver.recv() {
-                for x in chunk {
+                for &x in &chunk {
                     println!("{}", x.pos.as_fen(), x.num);
                     for y in x.moves  {
                         println!("  {}", y.1)
