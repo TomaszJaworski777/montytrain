@@ -54,7 +54,6 @@ impl FilterDataReader {
                     }
                     if raw_sender.send(chunk).is_err() { return; }
                 }
-                println!("Data reader reached EOF, restarting stream...");
             }
         });
 
@@ -64,6 +63,13 @@ impl FilterDataReader {
             let mut shuffle_buffer = Vec::with_capacity(buffer_size);
             
             while let Ok(chunk) = raw_receiver.recv() {
+                for x in chunk {
+                    println!("{}", x.pos.as_fen(), x.num);
+                    for y in x.moves  {
+                        println!("  {}", y.1)
+                    }
+                }
+
                 shuffle_buffer.extend(chunk);
                 
                 if shuffle_buffer.len() >= buffer_size {
