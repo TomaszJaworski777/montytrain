@@ -150,7 +150,8 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
                 }
 
                 println!("{}, {}, {}", pos.as_fen(), data.best_move, num);
-                for x in moves_array {
+                for idx in 0..num {
+                    let x = moves_array[idx];
                     println!("  {}: {}", Move::from(x.0), x.1)
                 }
 
