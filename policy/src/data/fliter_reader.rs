@@ -67,7 +67,8 @@ impl FilterDataReader {
             while let Ok(chunk) = raw_receiver.recv() {
                 for &x in &chunk {
                     println!("{}, {}", x.pos.as_fen(), x.num);
-                    for y in x.moves  {
+                    for y_idx in 0..x.num  {
+                        let y = x.moves[y_idx];
                         println!("  {}: {}", Move::from(y.0), y.1)
                     }
                 }
