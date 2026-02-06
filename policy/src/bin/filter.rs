@@ -149,18 +149,22 @@ fn process_policy_game(game_bytes: &[u8], output: &mut Vec<DecompressedData>) {
                     num = 1;
                 }
 
-                println!("{}, {}, {}", pos.as_fen(), data.best_move, num);
+                let mut empty = true;
                 for idx in 0..num {
-                    let x = moves_array[idx];
-                    println!("  {}: {}", Move::from(x.0), x.1)
+                    if moves_array[idx].1 != 0 {
+                        empty = false;
+                        break;
+                    }
                 }
 
-                output.push(DecompressedData {
-                    pos: pos.clone(),
-                    castling: castling.clone(),
-                    moves: moves_array,
-                    num,
-                });
+                if !empty {
+                    output.push(DecompressedData {
+                        pos: pos.clone(),
+                        castling: castling.clone(),
+                        moves: moves_array,
+                        num,
+                    });
+                }
             }
             pos.make(data.best_move, &castling);
         }
