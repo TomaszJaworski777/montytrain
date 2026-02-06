@@ -5,6 +5,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use montyformat::chess::Move;
+
 use crate::data::reader::DecompressedData;
 use crate::inputs::MAX_MOVES;
 
@@ -66,7 +68,7 @@ impl FilterDataReader {
                 for &x in &chunk {
                     println!("{}, {}", x.pos.as_fen(), x.num);
                     for y in x.moves  {
-                        println!("  {}", y.1)
+                        println!("  {}: {}", Move::from(y.0), y.1)
                     }
                 }
 
