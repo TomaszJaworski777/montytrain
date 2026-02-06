@@ -10,7 +10,7 @@ use montyformat::{FastDeserialise, MontyFormat, SearchData};
 
 const INPUT_PATH: &str = "interleaved-policy.bin";
 const OUTPUT_PATH: &str = "finetune-policy.bin";
-const THREADS: usize = 1;
+const THREADS: usize = 8;
 const BATCH_SIZE: usize = 1024;
 const MAX_MOVES: usize = 64; 
 
