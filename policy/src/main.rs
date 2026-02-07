@@ -17,8 +17,8 @@ use bullet_cuda_backend::CudaDevice;
 
 use data::MontyDataLoader;
 
-const NAME: &str = "policy-4096";
-const HL_SIZE: usize = 4096;
+const NAME: &str = "policy-8192";
+const HL_SIZE: usize = 8192;
 const START_SUPERBATCH: usize = 1;
 const END_SUPERBATCH: usize = 20;
 
@@ -65,6 +65,8 @@ fn main() {
             START_LR * (END_LR / START_LR).powf(lambda)
         }),
     };
+
+    trainer.optimiser.load_from_checkpoint("./policy_checkpoints/policy-8192-800");
 
     preamble();
     trainer
