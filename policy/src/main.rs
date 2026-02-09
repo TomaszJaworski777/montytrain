@@ -25,8 +25,8 @@ const END_SUPERBATCH: usize = 20;
 // const START_LR: f32 = 0.001;
 // const END_LR: f32 = 0.00001; 
 
-const START_LR: f32 = 0.00002;
-const END_LR: f32 = 0.0000002; 
+const START_LR: f32 = 0.00004;
+const END_LR: f32 = 0.0000004; 
 
 fn preamble() {
     println!("NAME:             {NAME}");
