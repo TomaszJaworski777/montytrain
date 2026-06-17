@@ -19,7 +19,7 @@ use bullet::{
 };
 
 const HIDDEN_SIZE: usize = 8192;
-const END_SUPERBATCH: usize = 5000;
+const END_SUPERBATCH: usize = 6000;
 
 pub const QA: i16 = 128;
 pub const QB: i16 = 1024;
@@ -62,8 +62,15 @@ fn main() {
         batch_queue_size: 32,
     };
 
-    let data_loader = loader::DirectSequentialDataLoader::new(
-        &["./finetune-value.bin"],
+    fn filter(_: &Position, _: Move, _: i16, _: f32) -> bool {
+        true
+    }
+
+    let data_loader = loader::MontyBinpackLoader::new(
+        "./interleaved-value.bin",
+        48000,
+        8,
+        filter,
     );
 
     //trainer.load_from_checkpoint("value_checkpoints/MontyThreats-4000");
