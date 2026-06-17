@@ -18,8 +18,8 @@ use bullet::{
     }
 };
 
-const HIDDEN_SIZE: usize = 4096;
-const END_SUPERBATCH: usize = 25;
+const HIDDEN_SIZE: usize = 8192;
+const END_SUPERBATCH: usize = 5000;
 
 pub const QA: i16 = 128;
 pub const QB: i16 = 1024;
@@ -28,7 +28,7 @@ fn main() {
     let mut trainer = make_trainer::<ThreatInputs>(HIDDEN_SIZE);
 
     let schedule = TrainingSchedule {
-        net_id: format!("MontyThreatsFT3"),
+        net_id: format!("BigNet"),
         eval_scale: 400.0,
         steps: TrainingSteps {
             batch_size: 65_536,
@@ -38,11 +38,11 @@ fn main() {
         },
         wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
         lr_scheduler: lr::ExponentialDecayLR {
-            initial_lr: /*0.001,*/ 0.0000002,
-            final_lr: /*0.0000001,*/ 0.000000002,
+            initial_lr: 0.001, /*0.0000002,*/
+            final_lr: 0.0000001, /*0.000000002,*/
             final_superbatch: END_SUPERBATCH,
         },
-        save_rate: 5,
+        save_rate: 100,
     };
 
     let optimiser_params = optimiser::AdamWParams {
@@ -66,7 +66,7 @@ fn main() {
         &["./finetune-value.bin"],
     );
 
-    trainer.load_from_checkpoint("value_checkpoints/MontyThreats-4000");
+    //trainer.load_from_checkpoint("value_checkpoints/MontyThreats-4000");
     trainer.run(&schedule, &settings, &data_loader);
 
     for fen in [
